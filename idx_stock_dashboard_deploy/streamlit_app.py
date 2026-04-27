@@ -4,7 +4,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
 import yfinance as yf
-import pytz  # ➕ TAMBAHAN
+import pytz  # ✅ TAMBAHAN WAJIB
 
 # IMPORT LOGIC
 from idx_stock_monitor import (
@@ -16,6 +16,33 @@ from idx_stock_monitor import (
 )
 
 st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
+
+
+# ─────────────────────────────
+# AUTO MARKET REFRESH SYSTEM (NEW)
+# ─────────────────────────────
+def get_refresh_interval():
+    tz = pytz.timezone("Asia/Jakarta")
+    now = datetime.now(tz)
+
+    hour = now.hour
+    minute = now.minute
+    weekday = now.weekday()
+
+    if weekday >= 5:
+        return 120  # weekend
+
+    current_time = hour + minute / 60
+
+    if 9 <= current_time < 12:
+        return 15   # market aktif
+    if 12 <= current_time < 13.5:
+        return 60   # lunch break
+    if 13.5 <= current_time < 15:
+        return 15   # sesi 2
+
+    return 60
+
 
 # ─────────────────────────────
 # SECTOR FUNCTION
@@ -29,7 +56,7 @@ def get_sector(ticker: str):
 
 
 # ─────────────────────────────
-# SAFE COLOR FORMAT (NO STYLER ERROR)
+# FORMAT
 # ─────────────────────────────
 def format_signal(val):
     if val == "BUY":
@@ -54,46 +81,11 @@ def format_number(val):
 
 
 # ─────────────────────────────
-# ➕ AUTO MARKET REFRESH SYSTEM (TAMBAHAN BARU)
-# ─────────────────────────────
-def get_refresh_interval():
-    tz = pytz.timezone("Asia/Jakarta")
-    now = datetime.now(tz)
-
-    hour = now.hour
-    minute = now.minute
-    weekday = now.weekday()
-
-    # weekend
-    if weekday >= 5:
-        return 120
-
-    current_time = hour + minute / 60
-
-    # market session 1
-    if 9 <= current_time < 12:
-        return 15
-
-    # lunch break
-    if 12 <= current_time < 13.5:
-        return 60
-
-    # market session 2
-    if 13.5 <= current_time < 15:
-        return 15
-
-    return 60
-
-
-# ─────────────────────────────
 # SIDEBAR
 # ─────────────────────────────
 st.sidebar.title("⚙️ Settings")
 
-mode = st.sidebar.radio(
-    "",
-    ["Auto IDX Full"]
-)
+mode = st.sidebar.radio("", ["Auto IDX Full"])
 
 if mode == "Auto IDX Full":
     try:
@@ -116,19 +108,20 @@ interval = st.sidebar.selectbox("Interval", ["1min", "5min", "1d", "1wk", "1mo"]
 run_button = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
 auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
 
-# ❌ HAPUS SLIDER LAMA + 15000 BUG
-# ✔ DIGANTI AUTO SYSTEM
 
+# ─────────────────────────────
+# FIXED AUTO REFRESH (NO 15000 BUG)
+# ─────────────────────────────
 if auto_refresh:
     try:
         refresh_interval = get_refresh_interval()
 
-        st.sidebar.info(f"⏱️ Auto Refresh: {refresh_interval} detik")
+        st.sidebar.info(f"⏱️ Refresh: {refresh_interval} detik")
 
         if refresh_interval == 15:
             st.sidebar.success("🟢 Market Aktif")
         elif refresh_interval == 60:
-            st.sidebar.warning("🟡 Market Tutup / Istirahat")
+            st.sidebar.warning("🟡 Market Istirahat")
         else:
             st.sidebar.info("🔵 Weekend Mode")
 
@@ -138,18 +131,18 @@ if auto_refresh:
         )
 
     except:
-        st.warning("Module autorefresh belum terinstall")
+        st.warning("Auto refresh error")
 
 
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
 st.title("📊 MASA GAK ALL-IN 🤔")
-st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥 ")
+st.title("CACING-CACING 🪱 NAGA-NAGA 🐉🔥")
 
 
 # ─────────────────────────────
-# CHART  (FULL ORIGINAL KAMU, TIDAK DIHAPUS)
+# CHART (FULL ORIGINAL KAMU - FIXED SYNTAX ONLY)
 # ─────────────────────────────
 def plot_candlestick_with_signal(df, ticker, signal):
     df = df.copy()
@@ -269,9 +262,7 @@ if run_button or auto_refresh:
         st.error("❌ Tidak ada data")
         st.stop()
 
-    df_result["Action"] = df_result["Signal"].apply(
-        lambda x: "HOLD" if x == "NEUTRAL" else x
-    )
+    df_result["Action"] = df_result["Signal"].apply(lambda x: "HOLD" if x == "NEUTRAL" else x)
 
     st.subheader("📊 Market Summary")
 
