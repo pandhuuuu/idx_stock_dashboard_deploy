@@ -1,0 +1,7 @@
+streamlit
+pandas
+yfinance
+TA-Lib
+rich
+colorama
+tabulate
