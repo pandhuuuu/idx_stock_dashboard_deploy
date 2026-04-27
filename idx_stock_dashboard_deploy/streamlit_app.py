@@ -139,7 +139,7 @@ if auto_refresh:
             interval=refresh_interval * 1000,
             key="auto_refresh"
         )
-    except ModuleNotFoundError:
+    except:
         st.error("streamlit-autorefresh belum terinstall")
 
 # Watchlist
