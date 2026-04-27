@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+import plotly.graph_objects as go
 
-# IMPORT LOGIC KAMU
+# IMPORT LOGIC
 from idx_stock_monitor import (
     fetch_data,
     calculate_signals,
@@ -11,10 +12,7 @@ from idx_stock_monitor import (
     DEFAULT_TICKERS
 )
 
-st.set_page_config(
-    page_title="IDX Stock Dashboard",
-    layout="wide"
-)
+st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
 
 # ─────────────────────────────
 # SIDEBAR
@@ -51,15 +49,69 @@ if auto_refresh:
 # HEADER
 # ─────────────────────────────
 st.title("📊 IDX Stock Entry Signal Dashboard")
-st.caption("Multi-Factor Technical Analysis (MA, RSI, MACD, BB, Volume)")
+st.caption("Multi-Factor Technical Analysis")
 
 # ─────────────────────────────
-# TRIGGER SCAN
+# FUNCTION CHART
+# ─────────────────────────────
+def plot_candlestick_with_signal(df, ticker, signal):
+    fig = go.Figure()
+
+    # Candlestick
+    fig.add_trace(go.Candlestick(
+        x=df.index,
+        open=df['Open'],
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        name='Price'
+    ))
+
+    # Moving Average
+    df['MA10'] = df['Close'].rolling(10).mean()
+    df['MA30'] = df['Close'].rolling(30).mean()
+
+    fig.add_trace(go.Scatter(x=df.index, y=df['MA10'], name='MA10'))
+    fig.add_trace(go.Scatter(x=df.index, y=df['MA30'], name='MA30'))
+
+    # Signal marker
+    last_price = df['Close'].iloc[-1]
+    last_date = df.index[-1]
+
+    if signal == "BUY":
+        fig.add_trace(go.Scatter(
+            x=[last_date],
+            y=[last_price],
+            mode='markers+text',
+            text=["BUY"],
+            textposition="bottom center",
+            marker=dict(size=12, symbol="triangle-up")
+        ))
+
+    elif signal == "SELL":
+        fig.add_trace(go.Scatter(
+            x=[last_date],
+            y=[last_price],
+            mode='markers+text',
+            text=["SELL"],
+            textposition="top center",
+            marker=dict(size=12, symbol="triangle-down")
+        ))
+
+    fig.update_layout(
+        title=f"{ticker} Chart ({signal})",
+        height=500
+    )
+
+    return fig
+
+
+# ─────────────────────────────
+# MAIN LOGIC
 # ─────────────────────────────
 if run_button or auto_refresh:
 
     tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
-
     results = []
 
     progress = st.progress(0)
@@ -156,28 +208,34 @@ if run_button or auto_refresh:
     )
 
     # ─────────────────────────────
-    # TOP SIGNAL
+    # CHART
     # ─────────────────────────────
-    st.subheader("🔥 Top Signals")
+    st.subheader("📉 Chart Saham")
 
-    colA, colB = st.columns(2)
+    selected_ticker = st.selectbox(
+        "Pilih saham",
+        df_result["Saham"]
+    )
 
-    top_buy = df_result[df_result["Signal"] == "BUY"].sort_values(by="Confidence", ascending=False).head(5)
-    top_sell = df_result[df_result["Signal"] == "SELL"].sort_values(by="Confidence", ascending=False).head(5)
+    selected_row = df_result[df_result["Saham"] == selected_ticker].iloc[0]
 
-    with colA:
-        st.markdown("### 🟢 Top BUY")
-        st.dataframe(top_buy, use_container_width=True)
+    df_chart = fetch_data(add_jk(selected_ticker), period=period, interval=interval)
 
-    with colB:
-        st.markdown("### 🔴 Top SELL")
-        st.dataframe(top_sell, use_container_width=True)
+    if df_chart is not None:
+        fig = plot_candlestick_with_signal(
+            df_chart,
+            selected_ticker,
+            selected_row["Signal"]
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Data tidak tersedia")
 
     # ─────────────────────────────
     # FOOTER
     # ─────────────────────────────
     st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    st.warning("⚠️ Not financial advice. For educational purposes only.")
+    st.warning("⚠️ Not financial advice")
 
 else:
-    st.info("Klik **Scan Sekarang** atau aktifkan Auto Refresh di sidebar.")
+    st.info("Klik **Scan Sekarang** atau aktifkan Auto Refresh.")
