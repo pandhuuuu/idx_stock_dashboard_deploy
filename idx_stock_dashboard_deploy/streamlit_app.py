@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+from ai_model import train_model, predict_signal
 import plotly.graph_objects as go
 
 # IMPORT LOGIC
