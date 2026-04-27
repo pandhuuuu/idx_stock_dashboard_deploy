@@ -16,15 +16,6 @@ from idx_stock_monitor import (
 
 st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
 
-
-# ─────────────────────────────
-# COLOR HELPERS (SAFE)
-# ─────────────────────────────
-def color_text(value, positive=True):
-    color = "green" if positive else "red"
-    return f"<span style='color:{color}; font-weight:600'>{value}</span>"
-
-
 # ─────────────────────────────
 # SECTOR FUNCTION
 # ─────────────────────────────
@@ -34,6 +25,28 @@ def get_sector(ticker: str):
         return info.get("sector", "Unknown")
     except:
         return "Unknown"
+
+
+# ─────────────────────────────
+# COLOR STYLE HELPERS (NEW - SAFE ADDITION)
+# ─────────────────────────────
+def color_signal(val):
+    if val == "BUY":
+        return "color: green; font-weight: bold"
+    elif val == "SELL":
+        return "color: red; font-weight: bold"
+    else:
+        return "color: gray"
+
+def color_positive_negative(val):
+    try:
+        v = float(val)
+        return "color: green" if v >= 0 else "color: red"
+    except:
+        return ""
+
+def style_dataframe(df):
+    return df.style.applymap(color_positive_negative)
 
 
 # ─────────────────────────────
@@ -56,7 +69,6 @@ if mode == "Auto IDX Full":
 else:
     tickers_source = DEFAULT_TICKERS
 
-
 tickers_input = st.sidebar.text_area(
     "Kode Saham (pisah koma)",
     ",".join(tickers_source[:10])
@@ -76,16 +88,12 @@ if auto_refresh:
     except:
         st.warning("Module autorefresh belum terinstall")
 
-
-# ─────────────────────────────
-# HEADER
-# ─────────────────────────────
 st.title("📊 IDX Trading Dashboard PRO")
 st.caption("Scanner + Trading Plan + Sector Analyzer + Chart")
 
 
 # ─────────────────────────────
-# CHART FUNCTION
+# CHART
 # ─────────────────────────────
 def plot_candlestick_with_signal(df, ticker, signal):
     fig = go.Figure()
@@ -199,24 +207,18 @@ if run_button or auto_refresh:
         lambda x: "HOLD" if x == "NEUTRAL" else x
     )
 
-
     # ─────────────────────────────
-    # SUMMARY (COLOR FIXED)
+    # SUMMARY
     # ─────────────────────────────
     st.subheader("📊 Market Summary")
 
-    buy_val = (df_result["Signal"] == "BUY").sum()
-    sell_val = (df_result["Signal"] == "SELL").sum()
-    hold_val = (df_result["Action"] == "HOLD").sum()
-
     col1, col2, col3 = st.columns(3)
-    col1.markdown(f"### 🟢 BUY<br>{color_text(buy_val, True)}", unsafe_allow_html=True)
-    col2.markdown(f"### 🔴 SELL<br>{color_text(sell_val, False)}", unsafe_allow_html=True)
-    col3.markdown(f"### ⚪ HOLD<br>{hold_val}", unsafe_allow_html=True)
-
+    col1.metric("BUY", (df_result["Signal"] == "BUY").sum())
+    col2.metric("SELL", (df_result["Signal"] == "SELL").sum())
+    col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
 
     # ─────────────────────────────
-    # SECTOR
+    # SECTOR TABLE (COLOR FIX)
     # ─────────────────────────────
     st.subheader("🏭 Sector Breakdown")
 
@@ -227,40 +229,20 @@ if run_button or auto_refresh:
         Hold=("Action", lambda x: (x == "HOLD").sum()),
     ).reset_index()
 
-    st.dataframe(sector_df, use_container_width=True)
-
+    st.dataframe(style_dataframe(sector_df), use_container_width=True)
 
     # ─────────────────────────────
-    # TABLE (SAFE COLOR STYLE FIX)
+    # MAIN TABLE (COLOR SIGNAL)
     # ─────────────────────────────
     st.subheader("📈 Market Scanner")
 
-    def signal_color(v):
-        if v == "BUY":
-            return "color: green; font-weight:700"
-        elif v == "SELL":
-            return "color: red; font-weight:700"
-        return "color: gray"
+    styled_main = df_result.copy()
+    styled_main["Signal"] = styled_main["Signal"]
 
-    def rsi_color(v):
-        try:
-            v = float(v)
-            if v < 30:
-                return "color: green"
-            elif v > 70:
-                return "color: red"
-            return "color: orange"
-        except:
-            return ""
-
-    styled_df = df_result.sort_values(by="Confidence", ascending=False)
-
-    styled_df = styled_df.style.map(signal_color, subset=["Signal"]).map(
-        rsi_color, subset=["RSI"]
+    st.dataframe(
+        styled_main.style.applymap(color_positive_negative),
+        use_container_width=True
     )
-
-    st.dataframe(styled_df, use_container_width=True)
-
 
     # ─────────────────────────────
     # TOP SIGNALS
@@ -277,12 +259,11 @@ if run_button or auto_refresh:
 
     with col_buy:
         st.markdown("### 🟢 Top BUY")
-        st.dataframe(top_buy, use_container_width=True)
+        st.dataframe(style_dataframe(top_buy), use_container_width=True)
 
     with col_sell:
         st.markdown("### 🔴 Top SELL")
-        st.dataframe(top_sell, use_container_width=True)
-
+        st.dataframe(style_dataframe(top_sell), use_container_width=True)
 
     # ─────────────────────────────
     # TRADING PLAN
@@ -290,13 +271,12 @@ if run_button or auto_refresh:
     st.subheader("💰 Trading Plan")
 
     plan_df = df_result[[
-        "Saham", "Sektor", "Harga", "Entry",
-        "Take Profit", "Cut Loss", "RR Ratio",
-        "Action", "Confidence"
+        "Saham","Sektor","Harga","Entry",
+        "Take Profit","Cut Loss","RR Ratio",
+        "Action","Confidence"
     ]].sort_values(by="Confidence", ascending=False)
 
-    st.dataframe(plan_df, use_container_width=True)
-
+    st.dataframe(style_dataframe(plan_df), use_container_width=True)
 
     # ─────────────────────────────
     # SECTOR TABLES
@@ -304,16 +284,14 @@ if run_button or auto_refresh:
     st.subheader("🏭 Sector-Based Tables")
 
     for sector_name, sector_list in sector_map.items():
-
         sector_df = df_result[df_result["Saham"].isin(sector_list)]
 
         if not sector_df.empty:
             st.markdown(f"### 📌 {sector_name}")
             st.dataframe(
-                sector_df.sort_values(by="Confidence", ascending=False),
+                style_dataframe(sector_df.sort_values(by="Confidence", ascending=False)),
                 use_container_width=True
             )
-
 
     # ─────────────────────────────
     # CHART
@@ -329,8 +307,7 @@ if run_button or auto_refresh:
         fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
         st.plotly_chart(fig, use_container_width=True)
 
-
-    st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    st.caption(f"Last update: {datetime.now()}")
     st.warning("⚠️ Not financial advice")
 
 else:
