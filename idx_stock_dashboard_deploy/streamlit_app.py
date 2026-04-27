@@ -38,7 +38,7 @@ interval = st.sidebar.selectbox(
 
 run_button = st.sidebar.button("🚀 Scan Sekarang")
 
-# AUTO REFRESH (AMAN)
+# AUTO REFRESH
 auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
@@ -46,13 +46,13 @@ if auto_refresh:
     try:
         st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
     except:
-        st.warning("Autorefresh module belum terinstall")
+        st.warning("Module autorefresh belum terinstall")
 
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 IDX Stock Entry Signal Dashboard")
-st.caption("Multi-Factor Technical Analysis")
+st.title("📊 IDX Trading Dashboard PRO")
+st.caption("Scanner + Trading Plan + Chart")
 
 # ─────────────────────────────
 # FUNCTION CHART
@@ -76,7 +76,7 @@ def plot_candlestick_with_signal(df, ticker, signal):
     fig.add_trace(go.Scatter(x=df.index, y=df['MA10'], name='MA10'))
     fig.add_trace(go.Scatter(x=df.index, y=df['MA30'], name='MA30'))
 
-    # Signal marker
+    # SIGNAL MARKER
     last_price = df['Close'].iloc[-1]
     last_date = df.index[-1]
 
@@ -100,11 +100,7 @@ def plot_candlestick_with_signal(df, ticker, signal):
             marker=dict(size=12, symbol="triangle-down")
         ))
 
-    fig.update_layout(
-        title=f"{ticker} Chart ({signal})",
-        height=500
-    )
-
+    fig.update_layout(height=500)
     return fig
 
 
@@ -127,6 +123,7 @@ if run_button or auto_refresh:
         if df is not None:
             sig = calculate_signals(df)
 
+            # SIGNAL
             if sig["bull_score"] > sig["bear_score"] + 1:
                 signal = "BUY"
             elif sig["bear_score"] > sig["bull_score"] + 1:
@@ -138,26 +135,14 @@ if run_button or auto_refresh:
                 "Saham": ticker,
                 "Harga": sig["price"],
                 "RSI": sig["rsi"],
-                "Stoch": sig["stoch_k"],
-                "Volume(x)": sig["vol_ratio"],
-                "ATR %": sig["atr_pct"],
                 "Signal": signal,
-                "Bull Score": sig["bull_score"],
-                "Bear Score": sig["bear_score"],
                 "Confidence": sig["confidence"],
-            })
-        else:
-            results.append({
-                "Saham": ticker,
-                "Harga": "-",
-                "RSI": "-",
-                "Stoch": "-",
-                "Volume(x)": "-",
-                "ATR %": "-",
-                "Signal": "NO DATA",
-                "Bull Score": 0,
-                "Bear Score": 0,
-                "Confidence": 0,
+
+                # 🔥 TRADING PLAN
+                "Entry": sig["price"],
+                "Take Profit": sig["suggested_tp"],
+                "Cut Loss": sig["suggested_sl"],
+                "RR Ratio": sig["risk_reward"],
             })
 
         progress.progress((i + 1) / len(tickers))
@@ -166,10 +151,15 @@ if run_button or auto_refresh:
 
     df_result = pd.DataFrame(results)
 
-    # SAFETY FIX (anti error kosong)
-    if df_result.empty or "Confidence" not in df_result.columns:
-        st.error("❌ Tidak ada data. Cek ticker atau koneksi API.")
+    # SAFETY
+    if df_result.empty:
+        st.error("❌ Tidak ada data. Cek ticker atau koneksi.")
         st.stop()
+
+    # ACTION (HOLD)
+    df_result["Action"] = df_result["Signal"].apply(
+        lambda x: "HOLD" if x == "NEUTRAL" else x
+    )
 
     # ─────────────────────────────
     # SUMMARY
@@ -178,18 +168,14 @@ if run_button or auto_refresh:
 
     col1, col2, col3 = st.columns(3)
 
-    buy_count = len(df_result[df_result["Signal"] == "BUY"])
-    sell_count = len(df_result[df_result["Signal"] == "SELL"])
-    neutral_count = len(df_result[df_result["Signal"] == "NEUTRAL"])
-
-    col1.metric("BUY", buy_count)
-    col2.metric("SELL", sell_count)
-    col3.metric("NEUTRAL", neutral_count)
+    col1.metric("BUY", (df_result["Signal"] == "BUY").sum())
+    col2.metric("SELL", (df_result["Signal"] == "SELL").sum())
+    col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
 
     # ─────────────────────────────
     # TABLE
     # ─────────────────────────────
-    st.subheader("📈 Hasil Analisis")
+    st.subheader("📈 Market Scanner")
 
     st.dataframe(
         df_result.sort_values(by="Confidence", ascending=False),
@@ -197,9 +183,9 @@ if run_button or auto_refresh:
     )
 
     # ─────────────────────────────
-    # 🔥 REKOMENDASI
+    # 🔥 REKOMENDASI BUY / SELL
     # ─────────────────────────────
-    st.subheader("🎯 Rekomendasi Trading")
+    st.subheader("🎯 Top Trading Signals")
 
     col_buy, col_sell = st.columns(2)
 
@@ -211,41 +197,46 @@ if run_button or auto_refresh:
 
     with col_buy:
         st.markdown("### 🟢 Top BUY")
-        if not top_buy.empty:
-            st.dataframe(top_buy, use_container_width=True)
-        else:
-            st.info("Tidak ada sinyal BUY")
+        st.dataframe(top_buy, use_container_width=True)
 
     with col_sell:
         st.markdown("### 🔴 Top SELL")
-        if not top_sell.empty:
-            st.dataframe(top_sell, use_container_width=True)
-        else:
-            st.info("Tidak ada sinyal SELL")
+        st.dataframe(top_sell, use_container_width=True)
+
+    # ─────────────────────────────
+    # 💰 TRADING PLAN TABLE
+    # ─────────────────────────────
+    st.subheader("💰 Trading Plan Recommendation")
+
+    plan_df = df_result[[
+        "Saham",
+        "Harga",
+        "Entry",
+        "Take Profit",
+        "Cut Loss",
+        "RR Ratio",
+        "Action",
+        "Confidence"
+    ]].sort_values(by="Confidence", ascending=False)
+
+    st.dataframe(plan_df, use_container_width=True)
 
     # ─────────────────────────────
     # CHART
     # ─────────────────────────────
-    st.subheader("📉 Chart Saham")
+    st.subheader("📉 Chart")
 
-    selected_ticker = st.selectbox(
-        "Pilih saham",
-        df_result["Saham"]
-    )
+    selected = st.selectbox("Pilih Saham", df_result["Saham"])
 
-    selected_row = df_result[df_result["Saham"] == selected_ticker].iloc[0]
+    row = df_result[df_result["Saham"] == selected].iloc[0]
 
-    df_chart = fetch_data(add_jk(selected_ticker), period=period, interval=interval)
+    df_chart = fetch_data(add_jk(selected), period=period, interval=interval)
 
     if df_chart is not None:
-        fig = plot_candlestick_with_signal(
-            df_chart,
-            selected_ticker,
-            selected_row["Signal"]
-        )
+        fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.warning("Data tidak tersedia")
+        st.warning("Data chart tidak tersedia")
 
     # ─────────────────────────────
     # FOOTER
@@ -254,4 +245,4 @@ if run_button or auto_refresh:
     st.warning("⚠️ Not financial advice")
 
 else:
-    st.info("Klik **Scan Sekarang** atau aktifkan Auto Refresh.")
+    st.info("Klik Scan atau aktifkan Auto Refresh")
