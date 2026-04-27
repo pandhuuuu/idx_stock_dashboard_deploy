@@ -59,7 +59,7 @@ st.sidebar.title("⚙️ Settings")
 
 mode = st.sidebar.radio(
     "Mode Data",
-    ["Manual Tickers", "Auto IDX Full"]
+    ["Auto IDX Full"]
 )
 
 if mode == "Auto IDX Full":
@@ -94,8 +94,8 @@ if auto_refresh:
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 IDX Trading Dashboard PRO")
-st.caption("Scanner + Trading Plan + Sector Analyzer + Chart")
+st.title("📊 IDX Trading")
+st.caption("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥 ")
 
 
 # ─────────────────────────────
