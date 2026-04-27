@@ -58,7 +58,7 @@ def format_number(val):
 st.sidebar.title("⚙️ Settings")
 
 mode = st.sidebar.radio(
-    "Mode Data",
+    "",
     ["Auto IDX Full"]
 )
 
@@ -77,24 +77,24 @@ tickers_input = st.sidebar.text_area(
     ",".join(tickers_source[:30])
 )
 
-period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y"], index=1)
-interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
+period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y", "3y", "5y", "10y"], index=1)
+interval = st.sidebar.selectbox("Interval", ["1min", "5min", "1d", "1wk", "1mo"], index=0)
 
-run_button = st.sidebar.button("🚀 Scan Sekarang")
+run_button = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
 
 auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
-refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
+refresh_interval = st.sidebar.slider("Interval (detik)", 10, 120, 60)
 
 if auto_refresh:
     try:
-        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
+        st_autorefresh(interval=refresh_interval * 15000, key="auto_refresh")
     except:
         st.warning("Module autorefresh belum terinstall")
 
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 IDX Trading")
+st.title("📊 MASA GAK ALL-IN 🤔")
 st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥 ")
 
 
@@ -439,7 +439,7 @@ if run_button or auto_refresh:
         st.plotly_chart(fig, use_container_width=True)
 
     st.caption(f"Last update: {datetime.now()}")
-    st.warning("⚠️ Not financial advice")
+    st.warning("SEHAT SEHAT PORTO NYA")
 
 else:
     st.info("Klik Scan atau aktifkan Auto Refresh")
