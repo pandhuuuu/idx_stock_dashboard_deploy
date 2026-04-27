@@ -276,9 +276,9 @@ def plot_candlestick_with_signal(df, ticker, signal):
 # SECTOR MAP
 # ─────────────────────────────
 sector_map = {
-    "BANK": ["BBCA", "BBRI", "BMRI", "BNGA", "BRIS", "BBNI"],
+    "BANK": ["BBCA", "BBRI", "BMRI", "MEGA", "BRIS", "BBNI"],
     "ENERGY": ["ADRO", "PTBA", "PGAS", "MEDC", "ITMG"],
-    "MINING": ["ANTM", "MDKA", "INCO", "BRMS"],
+    "MINING": ["ANTM", "MDKA", "INCO", "BRMS", "EMAS", "PSAB"],
     "CONSUMER": ["UNVR", "ICBP", "INDF", "MYOR"],
     "TELECOM": ["TLKM", "EXCL", "ISAT"],
     "TECH": ["GOTO", "WIFI"],
