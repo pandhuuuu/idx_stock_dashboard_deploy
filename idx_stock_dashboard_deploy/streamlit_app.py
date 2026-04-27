@@ -28,25 +28,28 @@ def get_sector(ticker: str):
 
 
 # ─────────────────────────────
-# COLOR STYLE HELPERS (NEW - SAFE ADDITION)
+# SAFE COLOR FORMAT (NO STYLER ERROR)
 # ─────────────────────────────
-def color_signal(val):
+def format_signal(val):
     if val == "BUY":
-        return "color: green; font-weight: bold"
+        return "🟢 BUY"
     elif val == "SELL":
-        return "color: red; font-weight: bold"
+        return "🔴 SELL"
     else:
-        return "color: gray"
+        return "⚪ NEUTRAL"
 
-def color_positive_negative(val):
+
+def format_number(val):
     try:
         v = float(val)
-        return "color: green" if v >= 0 else "color: red"
+        if v > 0:
+            return f"🟢 {v}"
+        elif v < 0:
+            return f"🔴 {v}"
+        else:
+            return f"⚪ {v}"
     except:
-        return ""
-
-def style_dataframe(df):
-    return df.style.applymap(color_positive_negative)
+        return val
 
 
 # ─────────────────────────────
@@ -88,6 +91,9 @@ if auto_refresh:
     except:
         st.warning("Module autorefresh belum terinstall")
 
+# ─────────────────────────────
+# HEADER
+# ─────────────────────────────
 st.title("📊 IDX Trading Dashboard PRO")
 st.caption("Scanner + Trading Plan + Sector Analyzer + Chart")
 
@@ -122,7 +128,6 @@ def plot_candlestick_with_signal(df, ticker, signal):
             y=[last_price],
             mode='markers+text',
             text=["BUY"],
-            textposition="bottom center",
             marker=dict(size=12, symbol="triangle-up")
         ))
 
@@ -132,7 +137,6 @@ def plot_candlestick_with_signal(df, ticker, signal):
             y=[last_price],
             mode='markers+text',
             text=["SELL"],
-            textposition="top center",
             marker=dict(size=12, symbol="triangle-down")
         ))
 
@@ -144,13 +148,12 @@ def plot_candlestick_with_signal(df, ticker, signal):
 # SECTOR MAP
 # ─────────────────────────────
 sector_map = {
-    "BANK": ["BBCA", "BBRI", "BMRI", "BNGA", "BRIS", "BTPS", "BBNI"],
-    "ENERGY": ["ADRO", "PTBA", "PGAS", "MEDC", "ITMG", "INDY"],
-    "GOLD / MINING": ["ANTM", "MDKA", "INCO", "BRMS", "PSAB"],
-    "CONSUMER": ["UNVR", "ICBP", "INDF", "MYOR", "KLBF", "SIDO"],
+    "BANK": ["BBCA", "BBRI", "BMRI", "BNGA", "BRIS", "BBNI"],
+    "ENERGY": ["ADRO", "PTBA", "PGAS", "MEDC", "ITMG"],
+    "MINING": ["ANTM", "MDKA", "INCO", "BRMS"],
+    "CONSUMER": ["UNVR", "ICBP", "INDF", "MYOR"],
     "TELECOM": ["TLKM", "EXCL", "ISAT"],
-    "TECH": ["GOTO", "BUKA", "DCII", "WIFI"],
-    "PROPERTY": ["BSDE", "PWON", "CTRA", "SMRA"],
+    "TECH": ["GOTO", "WIFI"],
 }
 
 
@@ -218,7 +221,7 @@ if run_button or auto_refresh:
     col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
 
     # ─────────────────────────────
-    # SECTOR TABLE (COLOR FIX)
+    # SECTOR
     # ─────────────────────────────
     st.subheader("🏭 Sector Breakdown")
 
@@ -229,41 +232,41 @@ if run_button or auto_refresh:
         Hold=("Action", lambda x: (x == "HOLD").sum()),
     ).reset_index()
 
-    st.dataframe(style_dataframe(sector_df), use_container_width=True)
+    st.dataframe(sector_df, use_container_width=True)
 
     # ─────────────────────────────
-    # MAIN TABLE (COLOR SIGNAL)
+    # MAIN TABLE (COLORED)
     # ─────────────────────────────
     st.subheader("📈 Market Scanner")
 
-    styled_main = df_result.copy()
-    styled_main["Signal"] = styled_main["Signal"]
+    df_display = df_result.copy()
+    df_display["Signal"] = df_display["Signal"].apply(format_signal)
 
-    st.dataframe(
-        styled_main.style.applymap(color_positive_negative),
-        use_container_width=True
-    )
+    st.dataframe(df_display.sort_values(by="Confidence", ascending=False),
+                 use_container_width=True)
 
     # ─────────────────────────────
     # TOP SIGNALS
     # ─────────────────────────────
     st.subheader("🎯 Top Trading Signals")
 
-    col_buy, col_sell = st.columns(2)
-
-    top_buy = df_result[df_result["Signal"] == "BUY"]\
+    top_buy = df_result[df_result["Signal"] == "BUY"] \
         .sort_values(by="Confidence", ascending=False).head(5)
 
-    top_sell = df_result[df_result["Signal"] == "SELL"]\
+    top_sell = df_result[df_result["Signal"] == "SELL"] \
         .sort_values(by="Confidence", ascending=False).head(5)
 
-    with col_buy:
+    col1, col2 = st.columns(2)
+
+    with col1:
         st.markdown("### 🟢 Top BUY")
-        st.dataframe(style_dataframe(top_buy), use_container_width=True)
+        top_buy["Signal"] = top_buy["Signal"].apply(format_signal)
+        st.dataframe(top_buy, use_container_width=True)
 
-    with col_sell:
+    with col2:
         st.markdown("### 🔴 Top SELL")
-        st.dataframe(style_dataframe(top_sell), use_container_width=True)
+        top_sell["Signal"] = top_sell["Signal"].apply(format_signal)
+        st.dataframe(top_sell, use_container_width=True)
 
     # ─────────────────────────────
     # TRADING PLAN
@@ -271,27 +274,27 @@ if run_button or auto_refresh:
     st.subheader("💰 Trading Plan")
 
     plan_df = df_result[[
-        "Saham","Sektor","Harga","Entry",
-        "Take Profit","Cut Loss","RR Ratio",
-        "Action","Confidence"
+        "Saham", "Sektor", "Harga",
+        "Entry", "Take Profit", "Cut Loss",
+        "RR Ratio", "Action", "Confidence"
     ]].sort_values(by="Confidence", ascending=False)
 
-    st.dataframe(style_dataframe(plan_df), use_container_width=True)
+    plan_df["Action"] = plan_df["Action"].apply(format_signal)
+
+    st.dataframe(plan_df, use_container_width=True)
 
     # ─────────────────────────────
     # SECTOR TABLES
     # ─────────────────────────────
-    st.subheader("🏭 Sector-Based Tables")
+    st.subheader("🏭 Sector Tables")
 
-    for sector_name, sector_list in sector_map.items():
-        sector_df = df_result[df_result["Saham"].isin(sector_list)]
+    for sector, list_stock in sector_map.items():
+        sdf = df_result[df_result["Saham"].isin(list_stock)]
 
-        if not sector_df.empty:
-            st.markdown(f"### 📌 {sector_name}")
-            st.dataframe(
-                style_dataframe(sector_df.sort_values(by="Confidence", ascending=False)),
-                use_container_width=True
-            )
+        if not sdf.empty:
+            st.markdown(f"### {sector}")
+            sdf["Signal"] = sdf["Signal"].apply(format_signal)
+            st.dataframe(sdf, use_container_width=True)
 
     # ─────────────────────────────
     # CHART
