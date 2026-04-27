@@ -1,23 +1,33 @@
 """
 =============================================================
- IDX Stock Entry Signal Monitor
+ IDX Stock Entry Signal Monitor (FINAL HYBRID + ENV)
 =============================================================
 """
 
 import argparse
-import sys
 import time
-from datetime import datetime
+import os
 from functools import lru_cache
+
 import pandas as pd
 import yfinance as yf
 import talib
+import requests
 
-# optional CLI UI
 from colorama import init
 from tabulate import tabulate
+from dotenv import load_dotenv
 
 init(autoreset=True)
+
+# ──────────────────────────────────────────────
+# LOAD ENV
+# ──────────────────────────────────────────────
+load_dotenv()
+API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
+
+if not API_KEY:
+    print("⚠️ WARNING: API KEY tidak ditemukan di .env")
 
 # ──────────────────────────────────────────────
 # DEFAULT TICKERS
@@ -29,7 +39,7 @@ DEFAULT_TICKERS = [
 ]
 
 # ──────────────────────────────────────────────
-# AUTO IDX FULL
+# AUTO IDX
 # ──────────────────────────────────────────────
 @lru_cache(maxsize=1)
 def get_all_idx_tickers():
@@ -38,7 +48,7 @@ def get_all_idx_tickers():
         df = pd.read_csv(url)
         return df["ticker"].dropna().unique().tolist()
     except Exception as e:
-        print(f"[AUTO IDX ERROR] fallback default: {e}")
+        print(f"[AUTO IDX ERROR]: {e}")
         return None
 
 
@@ -50,27 +60,83 @@ def add_jk(ticker: str) -> str:
 
 
 # ──────────────────────────────────────────────
-# FETCH DATA
+# FETCH DATA (HYBRID)
 # ──────────────────────────────────────────────
+@lru_cache(maxsize=128)
 def fetch_data(ticker_jk: str, period="3mo", interval="1d"):
-    try:
-        df = yf.download(ticker_jk, period=period, interval=interval,
-                         progress=False, auto_adjust=True)
 
-        if df.empty:
+    # ───────────────
+    # 1. YFINANCE (PRIMARY)
+    # ───────────────
+    try:
+        df = yf.download(
+            ticker_jk,
+            period=period,
+            interval=interval,
+            progress=False,
+            auto_adjust=True
+        )
+
+        if df is not None and not df.empty:
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            return df
+
+    except Exception as e:
+        print(f"[YF ERROR] {ticker_jk}: {e}")
+
+    # ───────────────
+    # 2. ALPHA VANTAGE (FALLBACK)
+    # ───────────────
+    if not API_KEY:
+        return None
+
+    try:
+        symbol = ticker_jk.replace(".JK", "")
+
+        url = "https://www.alphavantage.co/query"
+        params = {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": symbol,
+            "apikey": API_KEY
+        }
+
+        res = requests.get(url, params=params)
+        data = res.json()
+
+        if "Time Series (Daily)" not in data:
+            print(f"[AV FAIL] {ticker_jk}")
             return None
 
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
+        df = pd.DataFrame.from_dict(
+            data["Time Series (Daily)"], orient="index"
+        )
+
+        df = df.rename(columns={
+            "1. open": "Open",
+            "2. high": "High",
+            "3. low": "Low",
+            "4. close": "Close",
+            "5. volume": "Volume"
+        })
+
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index()
+        df = df.astype(float)
+
+        print(f"[FALLBACK AV] {ticker_jk}")
+
+        time.sleep(12)  # anti rate limit
 
         return df
+
     except Exception as e:
-        print(f"[ERROR] {ticker_jk}: {e}")
+        print(f"[AV ERROR] {ticker_jk}: {e}")
         return None
 
 
 # ──────────────────────────────────────────────
-# SIGNAL ENGINE (FIXED + STREAMLIT COMPATIBLE)
+# SIGNAL ENGINE
 # ──────────────────────────────────────────────
 def calculate_signals(df: pd.DataFrame) -> dict:
     close = df["Close"].values
@@ -85,9 +151,6 @@ def calculate_signals(df: pd.DataFrame) -> dict:
 
     price_now = float(close[-1])
 
-    # ─────────────────────────────
-    # SIMPLE SCORING ENGINE (SAFE)
-    # ─────────────────────────────
     bull_score = 0
     bear_score = 0
 
@@ -107,9 +170,6 @@ def calculate_signals(df: pd.DataFrame) -> dict:
         else:
             bear_score += 1
 
-    # ─────────────────────────────
-    # RISK MANAGEMENT (SAFE DEFAULT)
-    # ─────────────────────────────
     suggested_sl = price_now * 0.98
     suggested_tp = price_now * 1.03
 
@@ -118,12 +178,9 @@ def calculate_signals(df: pd.DataFrame) -> dict:
     return {
         "price": price_now,
         "rsi": rsi_val,
-
-        # STREAMLIT REQUIRED
         "bull_score": bull_score,
         "bear_score": bear_score,
         "confidence": max(bull_score, bear_score),
-
         "suggested_sl": suggested_sl,
         "suggested_tp": suggested_tp,
         "risk_reward": risk_reward,
@@ -148,8 +205,8 @@ def run_scan(tickers, period, interval):
 
         rows.append([
             t,
-            sig["price"],
-            sig["rsi"],
+            round(sig["price"], 2),
+            round(sig["rsi"], 2),
             sig["bull_score"],
             sig["bear_score"]
         ])
