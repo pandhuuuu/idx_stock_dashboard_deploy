@@ -35,16 +35,6 @@ def get_all_idx_tickers():
 
 
 # ──────────────────────────────────────────────
-# DEFAULT TICKERS
-# ──────────────────────────────────────────────
-DEFAULT_TICKERS = [
-    "BBCA","BBRI","TLKM","ASII","BMRI","UNVR","GOTO","ICBP","KLBF","ANTM",
-    "INDF","EXCL","PGAS","ADRO","PTBA","AALI","ABMM","ACES","ADHI","AKRA",
-    "PTRO","MBMA","BUMI","BBNI","BBTN","BRIS","CPIN","JPFA","MYOR","HMSP",
-]
-
-
-# ──────────────────────────────────────────────
 # UTIL
 # ──────────────────────────────────────────────
 def add_jk(ticker: str) -> str:
