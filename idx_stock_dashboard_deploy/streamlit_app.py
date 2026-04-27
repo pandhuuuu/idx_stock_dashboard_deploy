@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import time
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
@@ -106,7 +105,7 @@ def format_signal(val):
 # ─────────────────────────────
 st.sidebar.title("⚙️ Settings")
 
-mode = st.sidebar.radio("Mode Data", ["Auto IDX Full"])
+mode = st.sidebar.radio("Mode Data", ["Manual Tickers", "Auto IDX Full"])
 
 if mode == "Auto IDX Full":
     try:
@@ -118,17 +117,18 @@ if mode == "Auto IDX Full":
 else:
     tickers_source = DEFAULT_TICKERS
 
-tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tickers_source[:30]))
+tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tickers_source[:10]))
 period           = st.sidebar.selectbox("Period",   ["1mo", "3mo", "6mo", "1y"], index=1)
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
-run_button       = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
+run_button       = st.sidebar.button("🚀 Scan Sekarang")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
-if auto_refresh: 
-    try: st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
-    
-    except: st.warning("Module autorefresh belum terinstall")
+if auto_refresh:
+    try:
+        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
+    except:
+        st.warning("Module autorefresh belum terinstall")
 
 # Watchlist
 st.sidebar.markdown("---")
@@ -154,8 +154,8 @@ else:
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 MASA GAK ALL-IN 🤔")
-st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥")
+st.title("📊 IDX Trading Dashboard PRO")
+st.caption("Scanner · Trading Plan · Sector Analyzer · Chart · Watchlist")
 
 
 # ─────────────────────────────
@@ -512,7 +512,7 @@ if st.session_state.scan_results is not None:
         st.plotly_chart(fig, use_container_width=True)
 
     st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    st.warning("SEHAT SEHAT PORTO NYA❤️❤️❤️")
+    st.warning("⚠️ Not financial advice. Gunakan sebagai referensi saja.")
 
 else:
     st.info("👈 Klik **Scan Sekarang** atau aktifkan Auto Refresh untuk memulai.")
