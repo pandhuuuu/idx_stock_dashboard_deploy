@@ -95,7 +95,7 @@ if auto_refresh:
 # HEADER
 # ─────────────────────────────
 st.title("📊 IDX Trading")
-st.caption("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥 ")
+st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥 ")
 
 
 # ─────────────────────────────
