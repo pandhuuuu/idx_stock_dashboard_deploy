@@ -1,4 +1,3 @@
-import streamlit as st
+from idx_stock_dashboard import main
 
-st.title("IDX Stock Dashboard 🚀")
-st.write("Deploy berhasil!")
+main()
