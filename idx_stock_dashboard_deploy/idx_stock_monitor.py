@@ -1,126 +1,52 @@
 """
 =============================================================
  IDX Stock Entry Signal Monitor
- Sumber data : Yahoo Finance (ticker IDX: pakai suffix .JK)
- Sinyal      : MA Crossover, RSI, MACD, Volume Spike, Breakout
 =============================================================
-Instalasi:
-    pip install yfinance pandas ta-lib-python colorama tabulate
-
-Cara pakai:
-    python idx_stock_monitor.py
-    python idx_stock_monitor.py --tickers BBCA TLKM ASII BMRI
-    python idx_stock_monitor.py --tickers BBCA TLKM --interval 1d --period 6mo
 """
 
 import argparse
 import sys
 import time
 from datetime import datetime
-
-# ✅ ADD: AUTO IDX IMPORT SUPPORT
 from functools import lru_cache
 import pandas as pd
+import yfinance as yf
+import talib
 
-try:
-    import yfinance as yf
-    import talib
-    from colorama import init, Fore, Style
-    from tabulate import tabulate
-    from rich.console import Console
-    from rich.table import Table
-    from rich.panel import Panel
-    from rich.columns import Columns
-    from rich.text import Text
-    from rich.progress import Progress, BarColumn, TextColumn
-    from rich.layout import Layout
-    from rich.align import Align
-except ImportError:
-    print("\n[!] Modul belum terinstall. Jalankan perintah berikut:\n")
-    print("    pip install yfinance pandas ta-lib colorama tabulate rich\n")
-    sys.exit(1)
+# optional CLI UI
+from colorama import init
+from tabulate import tabulate
 
 init(autoreset=True)
 
+
 # ──────────────────────────────────────────────
-# AUTO IDX FULL (NEW - ADDED)
+# AUTO IDX FULL
 # ──────────────────────────────────────────────
 @lru_cache(maxsize=1)
 def get_all_idx_tickers():
-    """
-    Ambil seluruh saham IDX secara otomatis dari dataset publik.
-    Tidak pakai streamlit agar tetap CLI-safe.
-    """
     try:
         url = "https://raw.githubusercontent.com/datasets/idx-listed-companies/main/data/idx.csv"
         df = pd.read_csv(url)
-
-        tickers = df["ticker"].dropna().unique().tolist()
-        return tickers
+        return df["ticker"].dropna().unique().tolist()
     except Exception as e:
-        print(f"[AUTO IDX ERROR] fallback ke DEFAULT_TICKERS: {e}")
+        print(f"[AUTO IDX ERROR] fallback default: {e}")
         return None
 
 
 # ──────────────────────────────────────────────
-# DEFAULT SAHAM IDX (bisa diubah)
+# DEFAULT TICKERS
 # ──────────────────────────────────────────────
 DEFAULT_TICKERS = [
-    "BBCA", "BBRI", "TLKM", "ASII", "BMRI", "UNVR",
-    "GOTO", "ICBP", "KLBF", "ANTM", "INDF", "EXCL",
-    "PGAS", "ADRO", "PTBA", "AALI", "ABBA", "ABDA",
-    "ABMM", "ACES", "ACST", "ADES", "ADHI", "AISA",
-    "AKRA", "AKPI", "ALDO", "ALKA", "ALMI", "AMAG",
-    "AMFG", "AMIN", "PTRO", "MBMA", "BUMI", "DEFI",
-    "WBSA", "BBNI", "BBTN", "BRIS", "BRPT", "TPIA",
-    "CPIN", "JPFA", "MYOR", "HMSP", "GGRM", "SMGR",
-    "WIKA", "PTPP", "WSKT", "MIKA", "SIDO", "TOWR",
-    "TBIG", "MNCN", "SCMA", "EMTK", "ERAA", "MAPA",
-    "MAPI", "RALS", "LPPF", "INKP", "TKIM", "BRMS",
-    "MDKA", "HRUM", "ITMG", "UNTR", "SRTG", "PWON",
-    "BSDE", "CTRA", "SMRA", "DMAS", "KIJA", "PNLF",
-    "BBYB", "ARTO", "NCKL", "AMRT", "HRTA", "SSMS",
-    "LSIP", "ELSA", "MEDC", "GIAA", "BFIN", "IMAS",
-    "INCO", "INDY", "ISAT", "KAEF", "KINO", "KREN",
-    "LPKR", "MAIN", "MPMX", "MTDL", "PPRE", "RAJA",
-    "SILO", "SMSM", "TELE", "TINS", "TOTO", "VIVA",
-    "WIFI", "WOOD", "BNGA", "BDMN", "BTPN", "PNBN",
-    "NISP", "BJBR", "BJTM", "BNII", "BSSR", "ADMF",
-    "MFIN", "BALI", "BIPI", "DOID", "TOBA", "HRME",
-    "SMIL", "UNVR", "ICBP", "MYOR", "ULTJ", "CLEO",
-    "KEJU", "CAMP", "HOKI", "FOOD", "DFAM", "EPMT",
-    "AMMN", "GEMS", "PTBA", "ANTM", "TINS", "INCO",
-    "MDKA", "BRMS", "HRUM", "ADRO", "ITMG", "UNTR",
+    "BBCA","BBRI","TLKM","ASII","BMRI","UNVR","GOTO","ICBP","KLBF","ANTM",
+    "INDF","EXCL","PGAS","ADRO","PTBA","AALI","ABMM","ACES","ADHI","AKRA",
+    "PTRO","MBMA","BUMI","BBNI","BBTN","BRIS","CPIN","JPFA","MYOR","HMSP",
 ]
 
+
 # ──────────────────────────────────────────────
-# PARAMETER SINYAL
+# UTIL
 # ──────────────────────────────────────────────
-RSI_OVERSOLD      = 30
-RSI_OVERBOUGHT    = 70
-RSI_NEUTRAL       = 50
-
-VOLUME_SPIKE_X    = 2.0
-VOLUME_AVG_PERIOD = 20
-
-MA_SHORT          = 10
-MA_LONG           = 30
-
-BREAKOUT_LOOKBACK = 20
-
-BB_PERIOD         = 20
-BB_STD_DEV        = 2.0
-
-ATR_PERIOD        = 14
-ATR_MULTIPLIER_SL = 2.0
-ATR_MULTIPLIER_TP = 3.0
-
-STOCH_PERIOD      = 14
-STOCH_SMOOTH      = 3
-
-RISK_FREE_RATE    = 0.06
-
-
 def add_jk(ticker: str) -> str:
     return ticker.upper() + ".JK" if not ticker.endswith(".JK") else ticker.upper()
 
@@ -128,11 +54,12 @@ def add_jk(ticker: str) -> str:
 # ──────────────────────────────────────────────
 # FETCH DATA
 # ──────────────────────────────────────────────
-def fetch_data(ticker_jk: str, period: str = "3mo", interval: str = "1d"):
+def fetch_data(ticker_jk: str, period="3mo", interval="1d"):
     try:
         df = yf.download(ticker_jk, period=period, interval=interval,
                          progress=False, auto_adjust=True)
-        if df.empty or len(df) < BREAKOUT_LOOKBACK + 5:
+
+        if df.empty:
             return None
 
         if isinstance(df.columns, pd.MultiIndex):
@@ -145,16 +72,13 @@ def fetch_data(ticker_jk: str, period: str = "3mo", interval: str = "1d"):
 
 
 # ──────────────────────────────────────────────
-# SIGNAL ENGINE (TIDAK DIUBAH)
+# SIGNAL ENGINE (FIXED + STREAMLIT COMPATIBLE)
 # ──────────────────────────────────────────────
 def calculate_signals(df: pd.DataFrame) -> dict:
     close = df["Close"].values
-    volume = df["Volume"].values
-    high = df["High"].values
-    low = df["Low"].values
 
-    sma_s = pd.Series(close).rolling(MA_SHORT).mean().iloc[-1]
-    sma_l = pd.Series(close).rolling(MA_LONG).mean().iloc[-1]
+    sma_s = pd.Series(close).rolling(10).mean().iloc[-1]
+    sma_l = pd.Series(close).rolling(30).mean().iloc[-1]
 
     rsi = talib.RSI(close, timeperiod=14)
     rsi_val = float(rsi[-1]) if not pd.isna(rsi[-1]) else 50
@@ -163,44 +87,76 @@ def calculate_signals(df: pd.DataFrame) -> dict:
 
     price_now = float(close[-1])
 
-   return {
+    # ─────────────────────────────
+    # SIMPLE SCORING ENGINE (SAFE)
+    # ─────────────────────────────
+    bull_score = 0
+    bear_score = 0
+
+    if sma_s > sma_l:
+        bull_score += 1
+    else:
+        bear_score += 1
+
+    if rsi_val < 30:
+        bull_score += 2
+    elif rsi_val > 70:
+        bear_score += 2
+
+    if len(macd_hist) > 0:
+        if macd_hist[-1] > 0:
+            bull_score += 1
+        else:
+            bear_score += 1
+
+    # ─────────────────────────────
+    # RISK MANAGEMENT (SAFE DEFAULT)
+    # ─────────────────────────────
+    suggested_sl = price_now * 0.98
+    suggested_tp = price_now * 1.03
+
+    risk_reward = abs(suggested_tp - price_now) / max(abs(price_now - suggested_sl), 1)
+
+    return {
         "price": price_now,
         "rsi": rsi_val,
-        "stoch_k": stoch_k,
-        "macd_hist": float(macd_hist[-1]) if len(macd_hist) > 0 else 0,
-    
-        # ✅ FIX UNTUK STREAMLIT (WAJIB ADA)
+
+        # STREAMLIT REQUIRED
         "bull_score": bull_score,
         "bear_score": bear_score,
         "confidence": max(bull_score, bear_score),
-    
+
         "suggested_sl": suggested_sl,
         "suggested_tp": suggested_tp,
         "risk_reward": risk_reward,
-}
+    }
 
 
 # ──────────────────────────────────────────────
-# RUN SCAN
+# SCANNER
 # ──────────────────────────────────────────────
 def run_scan(tickers, period, interval):
-    console = Console()
-
-    print("\nScanning...\n")
+    print("\n📊 SCANNING...\n")
 
     rows = []
+
     for t in tickers:
-        tkr = add_jk(t)
-        df = fetch_data(tkr, period, interval)
+        df = fetch_data(add_jk(t), period, interval)
 
         if df is None:
             continue
 
         sig = calculate_signals(df)
-        rows.append([tkr, sig["price"], sig["rsi"]])
 
-    for r in rows:
-        print(r)
+        rows.append([
+            t,
+            sig["price"],
+            sig["rsi"],
+            sig["bull_score"],
+            sig["bear_score"]
+        ])
+
+    print(tabulate(rows, headers=["Ticker","Price","RSI","Bull","Bear"]))
 
 
 # ──────────────────────────────────────────────
@@ -212,14 +168,10 @@ def main():
     parser.add_argument("--tickers", nargs="+", default=DEFAULT_TICKERS)
     parser.add_argument("--period", default="3mo")
     parser.add_argument("--interval", default="1d")
-
-    # ✅ ADD: AUTO IDX FLAG
-    parser.add_argument("--use-idx-full", action="store_true",
-                        help="Gunakan seluruh saham IDX otomatis")
+    parser.add_argument("--use-idx-full", action="store_true")
 
     args = parser.parse_args()
 
-    # ✅ AUTO IDX OVERRIDE (NEW)
     if args.use_idx_full:
         idx = get_all_idx_tickers()
         if idx:
