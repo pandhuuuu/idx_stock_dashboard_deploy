@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
+import yfinance as yf
 
 # IMPORT LOGIC
 from idx_stock_monitor import (
@@ -13,6 +14,17 @@ from idx_stock_monitor import (
 )
 
 st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
+
+# ─────────────────────────────
+# SECTOR FUNCTION (NEW)
+# ─────────────────────────────
+def get_sector(ticker: str):
+    try:
+        info = yf.Ticker(add_jk(ticker)).info
+        return info.get("sector", "Unknown")
+    except:
+        return "Unknown"
+
 
 # ─────────────────────────────
 # SIDEBAR
@@ -55,7 +67,7 @@ st.title("📊 IDX Trading Dashboard PRO")
 st.caption("Scanner + Trading Plan + Chart")
 
 # ─────────────────────────────
-# FUNCTION CHART
+# CHART FUNCTION
 # ─────────────────────────────
 def plot_candlestick_with_signal(df, ticker, signal):
     fig = go.Figure()
@@ -69,14 +81,12 @@ def plot_candlestick_with_signal(df, ticker, signal):
         name='Price'
     ))
 
-    # MA
     df['MA10'] = df['Close'].rolling(10).mean()
     df['MA30'] = df['Close'].rolling(30).mean()
 
     fig.add_trace(go.Scatter(x=df.index, y=df['MA10'], name='MA10'))
     fig.add_trace(go.Scatter(x=df.index, y=df['MA30'], name='MA30'))
 
-    # SIGNAL MARKER
     last_price = df['Close'].iloc[-1]
     last_date = df.index[-1]
 
@@ -123,7 +133,6 @@ if run_button or auto_refresh:
         if df is not None:
             sig = calculate_signals(df)
 
-            # SIGNAL
             if sig["bull_score"] > sig["bear_score"] + 1:
                 signal = "BUY"
             elif sig["bear_score"] > sig["bull_score"] + 1:
@@ -133,12 +142,12 @@ if run_button or auto_refresh:
 
             results.append({
                 "Saham": ticker,
+                "Sektor": get_sector(ticker),   # ✅ NEW
                 "Harga": sig["price"],
                 "RSI": sig["rsi"],
                 "Signal": signal,
                 "Confidence": sig["confidence"],
 
-                # 🔥 TRADING PLAN
                 "Entry": sig["price"],
                 "Take Profit": sig["suggested_tp"],
                 "Cut Loss": sig["suggested_sl"],
@@ -151,12 +160,10 @@ if run_button or auto_refresh:
 
     df_result = pd.DataFrame(results)
 
-    # SAFETY
     if df_result.empty:
         st.error("❌ Tidak ada data. Cek ticker atau koneksi.")
         st.stop()
 
-    # ACTION (HOLD)
     df_result["Action"] = df_result["Signal"].apply(
         lambda x: "HOLD" if x == "NEUTRAL" else x
     )
@@ -167,13 +174,26 @@ if run_button or auto_refresh:
     st.subheader("📊 Market Summary")
 
     col1, col2, col3 = st.columns(3)
-
     col1.metric("BUY", (df_result["Signal"] == "BUY").sum())
     col2.metric("SELL", (df_result["Signal"] == "SELL").sum())
     col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
 
     # ─────────────────────────────
-    # TABLE
+    # 📌 SECTOR SUMMARY (NEW)
+    # ─────────────────────────────
+    st.subheader("🏭 Sector Breakdown")
+
+    sector_df = df_result.groupby("Sektor").agg(
+        Total=("Saham", "count"),
+        Buy=("Signal", lambda x: (x == "BUY").sum()),
+        Sell=("Signal", lambda x: (x == "SELL").sum()),
+        Hold=("Action", lambda x: (x == "HOLD").sum()),
+    ).reset_index()
+
+    st.dataframe(sector_df, use_container_width=True)
+
+    # ─────────────────────────────
+    # MAIN TABLE
     # ─────────────────────────────
     st.subheader("📈 Market Scanner")
 
@@ -183,7 +203,7 @@ if run_button or auto_refresh:
     )
 
     # ─────────────────────────────
-    # 🔥 REKOMENDASI BUY / SELL
+    # TOP SIGNALS
     # ─────────────────────────────
     st.subheader("🎯 Top Trading Signals")
 
@@ -204,12 +224,13 @@ if run_button or auto_refresh:
         st.dataframe(top_sell, use_container_width=True)
 
     # ─────────────────────────────
-    # 💰 TRADING PLAN TABLE
+    # TRADING PLAN
     # ─────────────────────────────
     st.subheader("💰 Trading Plan Recommendation")
 
     plan_df = df_result[[
         "Saham",
+        "Sektor",
         "Harga",
         "Entry",
         "Take Profit",
@@ -222,6 +243,18 @@ if run_button or auto_refresh:
     st.dataframe(plan_df, use_container_width=True)
 
     # ─────────────────────────────
+    # 📌 STOCK PER SECTOR (NEW DETAIL VIEW)
+    # ─────────────────────────────
+    st.subheader("📌 Stocks per Sector")
+
+    for sector in df_result["Sektor"].unique():
+        st.markdown(f"### {sector}")
+        st.dataframe(
+            df_result[df_result["Sektor"] == sector],
+            use_container_width=True
+        )
+
+    # ─────────────────────────────
     # CHART
     # ─────────────────────────────
     st.subheader("📉 Chart")
@@ -229,7 +262,6 @@ if run_button or auto_refresh:
     selected = st.selectbox("Pilih Saham", df_result["Saham"])
 
     row = df_result[df_result["Saham"] == selected].iloc[0]
-
     df_chart = fetch_data(add_jk(selected), period=period, interval=interval)
 
     if df_chart is not None:
