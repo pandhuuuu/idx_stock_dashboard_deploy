@@ -1,338 +1,445 @@
-"""
-GANTI seluruh fungsi plot_candlestick_with_signal di app Streamlit kamu
-dengan kode di bawah ini.
-
-Fitur baru:
-  - Historical Buy-point & Sell-point (semua candle, bukan hanya terakhir)
-  - Label badge hijau/merah mirip TradingView
-  - Support & Resistance horizontal lines (otomatis dari swing high/low)
-  - Trendline (regresi linier dari swing-low)
-  - Volume bar di panel bawah
-  - Tampilan candlestick lebih rapi
-"""
-
-import numpy as np
+import streamlit as st
 import pandas as pd
+from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-from scipy import stats  # pip install scipy
+import yfinance as yf
+
+# IMPORT LOGIC
+from idx_stock_monitor import (
+    fetch_data,
+    calculate_signals,
+    add_jk,
+    DEFAULT_TICKERS,
+    get_all_idx_tickers
+)
+
+st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
+
+# ─────────────────────────────
+# SECTOR FUNCTION
+# ─────────────────────────────
+def get_sector(ticker: str):
+    try:
+        info = yf.Ticker(add_jk(ticker)).info
+        return info.get("sector", "Unknown")
+    except:
+        return "Unknown"
 
 
-# ─────────────────────────────────────────────────────────────
-# HELPER: Deteksi swing high / swing low
-# ─────────────────────────────────────────────────────────────
-def _swing_points(series: pd.Series, window: int = 5):
-    """Return index positions of local maxima and minima."""
-    highs, lows = [], []
-    for i in range(window, len(series) - window):
-        window_slice = series.iloc[i - window: i + window + 1]
-        if series.iloc[i] == window_slice.max():
-            highs.append(i)
-        if series.iloc[i] == window_slice.min():
-            lows.append(i)
-    return highs, lows
+# ─────────────────────────────
+# SAFE COLOR FORMAT (NO STYLER ERROR)
+# ─────────────────────────────
+def format_signal(val):
+    if val == "BUY":
+        return "🟢 BUY"
+    elif val == "SELL":
+        return "🔴 SELL"
+    else:
+        return "⚪ NEUTRAL"
 
 
-# ─────────────────────────────────────────────────────────────
-# HELPER: Generate buy/sell signals dari RSI + MA crossover
-# ─────────────────────────────────────────────────────────────
-def _generate_historical_signals(df: pd.DataFrame):
-    """
-    Hitung RSI dan MA crossover untuk seluruh candle, lalu
-    kembalikan daftar index buy & sell.
-
-    Buy  : RSI < 35 DAN MA10 baru saja memotong MA30 ke atas
-    Sell : RSI > 65 DAN MA10 baru saja memotong MA30 ke bawah
-    """
-    close = df["Close"]
-
-    # RSI-14
-    delta = close.diff()
-    gain = delta.clip(lower=0).rolling(14).mean()
-    loss = (-delta.clip(upper=0)).rolling(14).mean()
-    rs = gain / loss.replace(0, np.nan)
-    rsi = 100 - (100 / (1 + rs))
-
-    # Moving averages
-    ma10 = close.rolling(10).mean()
-    ma30 = close.rolling(30).mean()
-
-    buy_idx, sell_idx = [], []
-    for i in range(1, len(df)):
-        # MA crossover: golden cross → buy, death cross → sell
-        golden = (ma10.iloc[i] > ma30.iloc[i]) and (ma10.iloc[i - 1] <= ma30.iloc[i - 1])
-        death  = (ma10.iloc[i] < ma30.iloc[i]) and (ma10.iloc[i - 1] >= ma30.iloc[i - 1])
-
-        if golden and rsi.iloc[i] < 55:
-            buy_idx.append(i)
-        elif death and rsi.iloc[i] > 45:
-            sell_idx.append(i)
-
-    return buy_idx, sell_idx
+def format_number(val):
+    try:
+        v = float(val)
+        if v > 0:
+            return f"🟢 {v}"
+        elif v < 0:
+            return f"🔴 {v}"
+        else:
+            return f"⚪ {v}"
+    except:
+        return val
 
 
-# ─────────────────────────────────────────────────────────────
-# HELPER: Support & Resistance dari swing points
-# ─────────────────────────────────────────────────────────────
-def _support_resistance(df: pd.DataFrame, n_levels: int = 3):
-    """Return up to n support prices dan n resistance prices."""
-    _, lows_idx  = _swing_points(df["Low"],  window=5)
-    highs_idx, _ = _swing_points(df["High"], window=5)
+# ─────────────────────────────
+# SIDEBAR
+# ─────────────────────────────
+st.sidebar.title("⚙️ Settings")
 
-    # Ambil n terakhir
-    supports    = sorted([df["Low"].iloc[i]  for i in lows_idx[-n_levels:]])
-    resistances = sorted([df["High"].iloc[i] for i in highs_idx[-n_levels:]], reverse=True)
-    return supports, resistances
+mode = st.sidebar.radio(
+    "Mode Data",
+    ["Manual Tickers", "Auto IDX Full"]
+)
+
+if mode == "Auto IDX Full":
+    try:
+        tickers_source = get_all_idx_tickers()
+        if not tickers_source:
+            tickers_source = DEFAULT_TICKERS
+    except:
+        tickers_source = DEFAULT_TICKERS
+else:
+    tickers_source = DEFAULT_TICKERS
+
+tickers_input = st.sidebar.text_area(
+    "Kode Saham (pisah koma)",
+    ",".join(tickers_source[:10])
+)
+
+period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y"], index=1)
+interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
+
+run_button = st.sidebar.button("🚀 Scan Sekarang")
+
+auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
+refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
+
+if auto_refresh:
+    try:
+        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
+    except:
+        st.warning("Module autorefresh belum terinstall")
+
+# ─────────────────────────────
+# HEADER
+# ─────────────────────────────
+st.title("📊 IDX Trading Dashboard PRO")
+st.caption("Scanner + Trading Plan + Sector Analyzer + Chart")
 
 
-# ─────────────────────────────────────────────────────────────
-# HELPER: Trendline dari swing lows (regresi linier)
-# ─────────────────────────────────────────────────────────────
-def _trendline(df: pd.DataFrame):
-    """Fit linear regression through swing lows. Return (y_start, y_end)."""
-    _, lows_idx = _swing_points(df["Low"], window=5)
-    if len(lows_idx) < 2:
-        return None, None
-
-    x = np.array(lows_idx)
-    y = np.array([df["Low"].iloc[i] for i in lows_idx])
-    slope, intercept, *_ = stats.linregress(x, y)
-
-    y_start = intercept + slope * 0
-    y_end   = intercept + slope * (len(df) - 1)
-    return y_start, y_end
-
-
-# ─────────────────────────────────────────────────────────────
-# MAIN: Candlestick chart dengan semua fitur
-# ─────────────────────────────────────────────────────────────
-def plot_candlestick_with_signal(df: pd.DataFrame, ticker: str, signal: str):
-    """
-    Parameters
-    ----------
-    df      : DataFrame dari fetch_data (Open, High, Low, Close, Volume)
-    ticker  : Nama saham (untuk judul)
-    signal  : "BUY" | "SELL" | "NEUTRAL" (dipakai untuk marker terakhir)
-
-    Returns
-    -------
-    plotly.graph_objects.Figure
-    """
-
-    if df is None or df.empty:
-        fig = go.Figure()
-        fig.update_layout(title=f"{ticker} — No data", height=550)
-        return fig
-
-    # ── Moving averages ──────────────────────────────────────
+# ─────────────────────────────
+# CHART  ← HANYA BAGIAN INI YANG DIUBAH
+# ─────────────────────────────
+def plot_candlestick_with_signal(df, ticker, signal):
     df = df.copy()
-    df["MA10"] = df["Close"].rolling(10).mean()
-    df["MA30"] = df["Close"].rolling(30).mean()
 
-    # ── Signals, S/R, trendline ──────────────────────────────
-    buy_idx, sell_idx   = _generate_historical_signals(df)
-    supports, resistances = _support_resistance(df)
-    tl_start, tl_end    = _trendline(df)
+    # MA
+    df['MA10'] = df['Close'].rolling(10).mean()
+    df['MA30'] = df['Close'].rolling(30).mean()
 
-    # ── Layout: 2 rows (candlestick 75% + volume 25%) ────────
-    fig = make_subplots(
-        rows=2, cols=1,
-        shared_xaxes=True,
-        row_heights=[0.75, 0.25],
-        vertical_spacing=0.02,
-    )
+    # RSI-14 (tanpa library tambahan)
+    delta = df['Close'].diff()
+    gain  = delta.clip(lower=0).rolling(14).mean()
+    loss  = (-delta.clip(upper=0)).rolling(14).mean()
+    rs    = gain / loss.replace(0, float('nan'))
+    df['RSI'] = 100 - (100 / (1 + rs))
 
-    # ── Candlestick ──────────────────────────────────────────
+    # Deteksi historical buy/sell dari MA crossover + RSI
+    buy_dates, buy_prices   = [], []
+    sell_dates, sell_prices = [], []
+
+    for i in range(1, len(df)):
+        ma10_now  = df['MA10'].iloc[i]
+        ma10_prev = df['MA10'].iloc[i - 1]
+        ma30_now  = df['MA30'].iloc[i]
+        ma30_prev = df['MA30'].iloc[i - 1]
+        rsi_now   = df['RSI'].iloc[i]
+
+        if any(v != v for v in [ma10_now, ma10_prev, ma30_now, ma30_prev]):  # skip NaN
+            continue
+
+        # Golden cross → BUY
+        if ma10_now > ma30_now and ma10_prev <= ma30_prev and rsi_now < 60:
+            buy_dates.append(df.index[i])
+            buy_prices.append(df['Low'].iloc[i] * 0.985)
+
+        # Death cross → SELL
+        elif ma10_now < ma30_now and ma10_prev >= ma30_prev and rsi_now > 40:
+            sell_dates.append(df.index[i])
+            sell_prices.append(df['High'].iloc[i] * 1.015)
+
+    fig = go.Figure()
+
+    # Candlestick
     fig.add_trace(go.Candlestick(
         x=df.index,
-        open=df["Open"], high=df["High"],
-        low=df["Low"],   close=df["Close"],
-        name="Price",
-        increasing_line_color="#26a69a",
-        decreasing_line_color="#ef5350",
-        increasing_fillcolor="#26a69a",
-        decreasing_fillcolor="#ef5350",
-        line_width=1,
-    ), row=1, col=1)
+        open=df['Open'],
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        name='Price',
+        increasing_line_color='#26a69a',
+        decreasing_line_color='#ef5350',
+    ))
 
-    # ── MA lines ─────────────────────────────────────────────
+    # MA lines
     fig.add_trace(go.Scatter(
-        x=df.index, y=df["MA10"],
-        name="MA10", line=dict(color="#2196F3", width=1.5),
-    ), row=1, col=1)
-
+        x=df.index, y=df['MA10'],
+        name='MA10',
+        line=dict(color='#2196F3', width=1.5)
+    ))
     fig.add_trace(go.Scatter(
-        x=df.index, y=df["MA30"],
-        name="MA30", line=dict(color="#FF9800", width=1.5),
-    ), row=1, col=1)
+        x=df.index, y=df['MA30'],
+        name='MA30',
+        line=dict(color='#FF9800', width=1.5)
+    ))
 
-    # ── Trendline ────────────────────────────────────────────
-    if tl_start is not None:
+    # Historical BUY markers + badge label
+    if buy_dates:
         fig.add_trace(go.Scatter(
-            x=[df.index[0], df.index[-1]],
-            y=[tl_start, tl_end],
-            name="Trendline",
-            mode="lines",
-            line=dict(color="#FF5252", width=1.5, dash="dot"),
-        ), row=1, col=1)
-
-    # ── Support lines ────────────────────────────────────────
-    for i, s in enumerate(supports):
-        fig.add_hline(
-            y=s, line_width=1.2, line_dash="dash",
-            line_color="#1565C0",
-            annotation_text=f"Support {i+1}  {s:,.0f}",
-            annotation_position="left",
-            annotation_font=dict(color="#1565C0", size=10),
-            row=1, col=1,
-        )
-
-    # ── Resistance lines ─────────────────────────────────────
-    for i, r in enumerate(resistances):
-        fig.add_hline(
-            y=r, line_width=1.2, line_dash="dash",
-            line_color="#B71C1C",
-            annotation_text=f"Resistance {i+1}  {r:,.0f}",
-            annotation_position="left",
-            annotation_font=dict(color="#B71C1C", size=10),
-            row=1, col=1,
-        )
-
-    # ── Historical BUY markers ───────────────────────────────
-    if buy_idx:
-        buy_dates  = [df.index[i] for i in buy_idx]
-        buy_prices = [df["Low"].iloc[i] * 0.985 for i in buy_idx]   # sedikit di bawah candle
-        buy_labels = [f"Buy-point" for _ in buy_idx]
-
-        fig.add_trace(go.Scatter(
-            x=buy_dates, y=buy_prices,
-            mode="markers+text",
-            name="Buy Signal",
-            text=buy_labels,
-            textposition="bottom center",
-            textfont=dict(size=9, color="white"),
-            marker=dict(
-                symbol="triangle-up",
-                size=14,
-                color="#00C853",
-                line=dict(color="#007E33", width=1),
-            ),
-            hovertemplate="<b>Buy-point</b><br>%{x}<br>Price: %{customdata:,.0f}<extra></extra>",
-            customdata=[df["Close"].iloc[i] for i in buy_idx],
-        ), row=1, col=1)
-
-        # Label badge (annotation) untuk setiap buy point
-        for i, (d, p) in enumerate(zip(buy_dates, buy_prices)):
+            x=buy_dates,
+            y=buy_prices,
+            mode='markers',
+            name='Buy Signal',
+            marker=dict(symbol='triangle-up', size=14,
+                        color='#00C853', line=dict(color='#007E33', width=1)),
+            hovertemplate='<b>Buy-point</b><br>%{x}<extra></extra>'
+        ))
+        for d, p in zip(buy_dates, buy_prices):
             fig.add_annotation(
                 x=d, y=p,
                 text="Buy-point",
-                showarrow=True,
-                arrowhead=2,
-                arrowcolor="#00C853",
-                arrowsize=0.8,
-                ax=0, ay=28,
-                bgcolor="#00C853",
-                bordercolor="#007E33",
-                borderwidth=1,
-                borderpad=3,
-                font=dict(color="white", size=9, family="Arial"),
-                opacity=0.9,
-                row=1, col=1,
+                showarrow=True, arrowhead=2,
+                arrowcolor='#00C853', ax=0, ay=30,
+                bgcolor='#00C853', bordercolor='#007E33',
+                borderwidth=1, borderpad=3,
+                font=dict(color='white', size=9),
+                opacity=0.9
             )
 
-    # ── Historical SELL markers ──────────────────────────────
-    if sell_idx:
-        sell_dates  = [df.index[i] for i in sell_idx]
-        sell_prices = [df["High"].iloc[i] * 1.015 for i in sell_idx]  # sedikit di atas candle
-        sell_labels = [f"Sell-point" for _ in sell_idx]
-
+    # Historical SELL markers + badge label
+    if sell_dates:
         fig.add_trace(go.Scatter(
-            x=sell_dates, y=sell_prices,
-            mode="markers+text",
-            name="Sell Signal",
-            text=sell_labels,
-            textposition="top center",
-            textfont=dict(size=9, color="white"),
-            marker=dict(
-                symbol="triangle-down",
-                size=14,
-                color="#F44336",
-                line=dict(color="#B71C1C", width=1),
-            ),
-            hovertemplate="<b>Sell-point</b><br>%{x}<br>Price: %{customdata:,.0f}<extra></extra>",
-            customdata=[df["Close"].iloc[i] for i in sell_idx],
-        ), row=1, col=1)
-
-        # Label badge untuk setiap sell point
-        for i, (d, p) in enumerate(zip(sell_dates, sell_prices)):
+            x=sell_dates,
+            y=sell_prices,
+            mode='markers',
+            name='Sell Signal',
+            marker=dict(symbol='triangle-down', size=14,
+                        color='#F44336', line=dict(color='#B71C1C', width=1)),
+            hovertemplate='<b>Sell-point</b><br>%{x}<extra></extra>'
+        ))
+        for d, p in zip(sell_dates, sell_prices):
             fig.add_annotation(
                 x=d, y=p,
                 text="Sell-point",
-                showarrow=True,
-                arrowhead=2,
-                arrowcolor="#F44336",
-                arrowsize=0.8,
-                ax=0, ay=-28,
-                bgcolor="#F44336",
-                bordercolor="#B71C1C",
-                borderwidth=1,
-                borderpad=3,
-                font=dict(color="white", size=9, family="Arial"),
-                opacity=0.9,
-                row=1, col=1,
+                showarrow=True, arrowhead=2,
+                arrowcolor='#F44336', ax=0, ay=-30,
+                bgcolor='#F44336', bordercolor='#B71C1C',
+                borderwidth=1, borderpad=3,
+                font=dict(color='white', size=9),
+                opacity=0.9
             )
 
-    # ── Volume bar ───────────────────────────────────────────
-    if "Volume" in df.columns:
-        vol_colors = [
-            "#26a69a" if df["Close"].iloc[i] >= df["Open"].iloc[i] else "#ef5350"
-            for i in range(len(df))
-        ]
-        fig.add_trace(go.Bar(
-            x=df.index, y=df["Volume"],
-            name="Volume",
-            marker_color=vol_colors,
-            opacity=0.6,
-            showlegend=False,
-        ), row=2, col=1)
+    # Support & Resistance otomatis (5 swing point terakhir)
+    window = 5
+    highs_idx, lows_idx = [], []
+    for i in range(window, len(df) - window):
+        slice_h = df['High'].iloc[i - window: i + window + 1]
+        slice_l = df['Low'].iloc[i - window: i + window + 1]
+        if df['High'].iloc[i] == slice_h.max():
+            highs_idx.append(i)
+        if df['Low'].iloc[i] == slice_l.min():
+            lows_idx.append(i)
 
-    # ── Layout theming (mirip TradingView dark) ───────────────
+    for idx in lows_idx[-3:]:
+        s = df['Low'].iloc[idx]
+        fig.add_hline(
+            y=s, line_width=1, line_dash='dash', line_color='#1565C0',
+            annotation_text=f"Support {s:,.0f}",
+            annotation_font=dict(color='#1565C0', size=9),
+            annotation_position='right'
+        )
+
+    for idx in highs_idx[-3:]:
+        r = df['High'].iloc[idx]
+        fig.add_hline(
+            y=r, line_width=1, line_dash='dash', line_color='#B71C1C',
+            annotation_text=f"Resistance {r:,.0f}",
+            annotation_font=dict(color='#B71C1C', size=9),
+            annotation_position='right'
+        )
+
+    # Trendline dari swing lows (manual, tanpa scipy)
+    if len(lows_idx) >= 2:
+        x_pts = lows_idx[-5:]
+        y_pts = [df['Low'].iloc[i] for i in x_pts]
+        n = len(x_pts)
+        x_mean = sum(x_pts) / n
+        y_mean = sum(y_pts) / n
+        slope = sum((x_pts[i] - x_mean) * (y_pts[i] - y_mean) for i in range(n)) / \
+                sum((x_pts[i] - x_mean) ** 2 for i in range(n))
+        intercept = y_mean - slope * x_mean
+
+        tl_y_start = intercept + slope * 0
+        tl_y_end   = intercept + slope * (len(df) - 1)
+
+        fig.add_trace(go.Scatter(
+            x=[df.index[0], df.index[-1]],
+            y=[tl_y_start, tl_y_end],
+            name='Trendline',
+            mode='lines',
+            line=dict(color='#FF5252', width=1.5, dash='dot')
+        ))
+
     fig.update_layout(
-        title=dict(
-            text=f"<b>{ticker}</b>  |  Current Signal: "
-                 f"{'🟢 BUY' if signal == 'BUY' else '🔴 SELL' if signal == 'SELL' else '⚪ NEUTRAL'}",
-            font=dict(size=15),
-        ),
-        height=600,
+        height=500,
         xaxis_rangeslider_visible=False,
-        plot_bgcolor="#131722",
-        paper_bgcolor="#131722",
-        font=dict(color="#D1D4DC"),
-        legend=dict(
-            orientation="h", x=0, y=1.02,
-            bgcolor="rgba(0,0,0,0)",
-            font=dict(size=10),
-        ),
-        margin=dict(l=60, r=60, t=60, b=20),
-        hovermode="x unified",
-    )
-
-    fig.update_xaxes(
-        gridcolor="#1e2535",
-        showgrid=True,
-        zeroline=False,
-        showspikes=True,
-        spikecolor="#555",
-        spikethickness=1,
-    )
-    fig.update_yaxes(
-        gridcolor="#1e2535",
-        showgrid=True,
-        zeroline=False,
-        showspikes=True,
-        spikecolor="#555",
-        spikethickness=1,
-        tickformat=",",
+        title=f"{ticker}  |  {'🟢 BUY' if signal == 'BUY' else '🔴 SELL' if signal == 'SELL' else '⚪ NEUTRAL'}",
+        hovermode='x unified'
     )
 
     return fig
+
+
+# ─────────────────────────────
+# SECTOR MAP
+# ─────────────────────────────
+sector_map = {
+    "BANK": ["BBCA", "BBRI", "BMRI", "BNGA", "BRIS", "BBNI"],
+    "ENERGY": ["ADRO", "PTBA", "PGAS", "MEDC", "ITMG"],
+    "MINING": ["ANTM", "MDKA", "INCO", "BRMS"],
+    "CONSUMER": ["UNVR", "ICBP", "INDF", "MYOR"],
+    "TELECOM": ["TLKM", "EXCL", "ISAT"],
+    "TECH": ["GOTO", "WIFI"],
+}
+
+
+# ─────────────────────────────
+# MAIN
+# ─────────────────────────────
+if run_button or auto_refresh:
+
+    tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
+    results = []
+
+    progress = st.progress(0)
+    status = st.empty()
+
+    for i, ticker in enumerate(tickers):
+        status.text(f"Scanning {ticker}...")
+
+        df = fetch_data(add_jk(ticker), period=period, interval=interval)
+
+        if df is not None:
+            sig = calculate_signals(df)
+
+            if sig["bull_score"] > sig["bear_score"] + 1:
+                signal = "BUY"
+            elif sig["bear_score"] > sig["bull_score"] + 1:
+                signal = "SELL"
+            else:
+                signal = "NEUTRAL"
+
+            results.append({
+                "Saham": ticker,
+                "Sektor": get_sector(ticker),
+                "Harga": sig["price"],
+                "RSI": sig["rsi"],
+                "Signal": signal,
+                "Confidence": sig["confidence"],
+                "Entry": sig["price"],
+                "Take Profit": sig["suggested_tp"],
+                "Cut Loss": sig["suggested_sl"],
+                "RR Ratio": sig["risk_reward"],
+            })
+
+        progress.progress((i + 1) / len(tickers))
+
+    status.text("✅ Scan selesai!")
+
+    df_result = pd.DataFrame(results)
+
+    if df_result.empty:
+        st.error("❌ Tidak ada data")
+        st.stop()
+
+    df_result["Action"] = df_result["Signal"].apply(
+        lambda x: "HOLD" if x == "NEUTRAL" else x
+    )
+
+    # ─────────────────────────────
+    # SUMMARY
+    # ─────────────────────────────
+    st.subheader("📊 Market Summary")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("BUY", (df_result["Signal"] == "BUY").sum())
+    col2.metric("SELL", (df_result["Signal"] == "SELL").sum())
+    col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
+
+    # ─────────────────────────────
+    # SECTOR
+    # ─────────────────────────────
+    st.subheader("🏭 Sector Breakdown")
+
+    sector_df = df_result.groupby("Sektor").agg(
+        Total=("Saham", "count"),
+        Buy=("Signal", lambda x: (x == "BUY").sum()),
+        Sell=("Signal", lambda x: (x == "SELL").sum()),
+        Hold=("Action", lambda x: (x == "HOLD").sum()),
+    ).reset_index()
+
+    st.dataframe(sector_df, use_container_width=True)
+
+    # ─────────────────────────────
+    # MAIN TABLE (COLORED)
+    # ─────────────────────────────
+    st.subheader("📈 Market Scanner")
+
+    df_display = df_result.copy()
+    df_display["Signal"] = df_display["Signal"].apply(format_signal)
+
+    st.dataframe(df_display.sort_values(by="Confidence", ascending=False),
+                 use_container_width=True)
+
+    # ─────────────────────────────
+    # TOP SIGNALS
+    # ─────────────────────────────
+    st.subheader("🎯 Top Trading Signals")
+
+    top_buy = df_result[df_result["Signal"] == "BUY"] \
+        .sort_values(by="Confidence", ascending=False).head(5)
+
+    top_sell = df_result[df_result["Signal"] == "SELL"] \
+        .sort_values(by="Confidence", ascending=False).head(5)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 🟢 Top BUY")
+        top_buy["Signal"] = top_buy["Signal"].apply(format_signal)
+        st.dataframe(top_buy, use_container_width=True)
+
+    with col2:
+        st.markdown("### 🔴 Top SELL")
+        top_sell["Signal"] = top_sell["Signal"].apply(format_signal)
+        st.dataframe(top_sell, use_container_width=True)
+
+    # ─────────────────────────────
+    # TRADING PLAN
+    # ─────────────────────────────
+    st.subheader("💰 Trading Plan")
+
+    plan_df = df_result[[
+        "Saham", "Sektor", "Harga",
+        "Entry", "Take Profit", "Cut Loss",
+        "RR Ratio", "Action", "Confidence"
+    ]].sort_values(by="Confidence", ascending=False)
+
+    plan_df["Action"] = plan_df["Action"].apply(format_signal)
+
+    st.dataframe(plan_df, use_container_width=True)
+
+    # ─────────────────────────────
+    # SECTOR TABLES
+    # ─────────────────────────────
+    st.subheader("🏭 Sector Tables")
+
+    for sector, list_stock in sector_map.items():
+        sdf = df_result[df_result["Saham"].isin(list_stock)]
+
+        if not sdf.empty:
+            st.markdown(f"### {sector}")
+            sdf["Signal"] = sdf["Signal"].apply(format_signal)
+            st.dataframe(sdf, use_container_width=True)
+
+    # ─────────────────────────────
+    # CHART
+    # ─────────────────────────────
+    st.subheader("📉 Chart")
+
+    selected = st.selectbox("Pilih Saham", df_result["Saham"])
+
+    row = df_result[df_result["Saham"] == selected].iloc[0]
+    df_chart = fetch_data(add_jk(selected), period=period, interval=interval)
+
+    if df_chart is not None:
+        fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
+        st.plotly_chart(fig, use_container_width=True)
+
+    st.caption(f"Last update: {datetime.now()}")
+    st.warning("⚠️ Not financial advice")
+
+else:
+    st.info("Klik Scan atau aktifkan Auto Refresh")
