@@ -74,7 +74,7 @@ else:
 
 tickers_input = st.sidebar.text_area(
     "Kode Saham (pisah koma)",
-    ",".join(tickers_source[:100])
+    ",".join(tickers_source[:30])
 )
 
 period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y"], index=1)
