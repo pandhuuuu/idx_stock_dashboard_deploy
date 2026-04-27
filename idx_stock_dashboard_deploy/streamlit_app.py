@@ -10,7 +10,8 @@ from idx_stock_monitor import (
     fetch_data,
     calculate_signals,
     add_jk,
-    DEFAULT_TICKERS
+    DEFAULT_TICKERS,
+    get_all_idx_tickers   # ✅ ADDED
 )
 
 st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
@@ -31,9 +32,27 @@ def get_sector(ticker: str):
 # ─────────────────────────────
 st.sidebar.title("⚙️ Settings")
 
+# ✅ ADDED: MODE SELECTOR
+mode = st.sidebar.radio(
+    "Mode Data",
+    ["Manual Tickers", "Auto IDX Full"]
+)
+
+# ✅ FIX: dynamic ticker source
+if mode == "Auto IDX Full":
+    try:
+        tickers_source = get_all_idx_tickers()
+        if not tickers_source:
+            tickers_source = DEFAULT_TICKERS
+    except:
+        tickers_source = DEFAULT_TICKERS
+else:
+    tickers_source = DEFAULT_TICKERS
+
+
 tickers_input = st.sidebar.text_area(
     "Kode Saham (pisah koma)",
-    ",".join(DEFAULT_TICKERS[:10])
+    ",".join(tickers_source[:10])
 )
 
 period = st.sidebar.selectbox(
