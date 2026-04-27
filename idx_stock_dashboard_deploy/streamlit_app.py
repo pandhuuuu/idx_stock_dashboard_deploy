@@ -105,7 +105,7 @@ def format_signal(val):
 # ─────────────────────────────
 st.sidebar.title("⚙️ Settings")
 
-mode = st.sidebar.radio("Mode Data", ["Manual Tickers", "Auto IDX Full"])
+mode = st.sidebar.radio("Mode Data", ["Auto IDX Full"])
 
 if mode == "Auto IDX Full":
     try:
@@ -117,7 +117,7 @@ if mode == "Auto IDX Full":
 else:
     tickers_source = DEFAULT_TICKERS
 
-tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tickers_source[:10]))
+tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tickers_source[:30]))
 period           = st.sidebar.selectbox("Period",   ["1mo", "3mo", "6mo", "1y"], index=1)
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang")
