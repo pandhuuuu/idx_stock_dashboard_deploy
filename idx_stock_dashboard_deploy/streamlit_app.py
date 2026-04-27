@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
 import plotly.graph_objects as go
+from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 
 from idx_stock_monitor import (
@@ -11,14 +11,18 @@ from idx_stock_monitor import (
     DEFAULT_TICKERS
 )
 
-from ai_model import train_model, predict_signal
+st.set_page_config(layout="wide", page_title="Trading Dashboard PRO")
 
-st.set_page_config(page_title="AI Trading Dashboard", layout="wide")
+# ─────────────────────────────
+# AUTO REFRESH
+# ─────────────────────────────
+if st.sidebar.checkbox("🔄 Auto Refresh"):
+    st_autorefresh(interval=60000, key="refresh")
 
 # ─────────────────────────────
 # SIDEBAR
 # ─────────────────────────────
-st.sidebar.title("⚙️ Settings")
+st.sidebar.title("⚙️ Control Panel")
 
 tickers_input = st.sidebar.text_area(
     "Kode Saham",
@@ -28,110 +32,154 @@ tickers_input = st.sidebar.text_area(
 period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y"])
 interval = st.sidebar.selectbox("Interval", ["1d", "1wk"])
 
-run_button = st.sidebar.button("🚀 Scan")
-
-# AUTO REFRESH
-if st.sidebar.checkbox("🔄 Auto Refresh"):
-    st_autorefresh(interval=60000, key="refresh")
+filter_signal = st.sidebar.selectbox(
+    "Filter Signal",
+    ["ALL", "BUY", "SELL", "NEUTRAL"]
+)
 
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 AI Trading Dashboard")
-st.caption("Technical + AI Prediction")
+st.title("📊 Trading Dashboard PRO")
+st.caption("Mini TradingView Style Dashboard")
+
+tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
+
+results = []
 
 # ─────────────────────────────
 # SCAN
 # ─────────────────────────────
-if run_button:
+for ticker in tickers:
+    df = fetch_data(add_jk(ticker), period, interval)
 
-    tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
-    results = []
+    if df is not None:
+        sig = calculate_signals(df)
 
-    for ticker in tickers:
+        if sig["bull_score"] > sig["bear_score"] + 1:
+            signal = "BUY"
+        elif sig["bear_score"] > sig["bull_score"] + 1:
+            signal = "SELL"
+        else:
+            signal = "NEUTRAL"
 
-        df = fetch_data(add_jk(ticker), period=period, interval=interval)
+        results.append({
+            "Saham": ticker,
+            "Harga": sig["price"],
+            "RSI": sig["rsi"],
+            "Signal": signal,
+            "Confidence": sig["confidence"]
+        })
 
-        if df is not None:
+df_result = pd.DataFrame(results)
 
-            sig = calculate_signals(df)
+# FILTER
+if filter_signal != "ALL":
+    df_result = df_result[df_result["Signal"] == filter_signal]
 
-            # 🔥 AI PART
-            model = train_model(df)
-            ai_prob = predict_signal(model, df)
+# ─────────────────────────────
+# TABLE
+# ─────────────────────────────
+st.subheader("📈 Market Scanner")
 
-            if ai_prob > 0.6:
-                ai_signal = "AI BUY"
-            elif ai_prob < 0.4:
-                ai_signal = "AI SELL"
-            else:
-                ai_signal = "AI HOLD"
+st.dataframe(
+    df_result.sort_values(by="Confidence", ascending=False),
+    use_container_width=True
+)
 
-            # NORMAL SIGNAL
-            if sig["bull_score"] > sig["bear_score"] + 1:
-                signal = "BUY"
-            elif sig["bear_score"] > sig["bull_score"] + 1:
-                signal = "SELL"
-            else:
-                signal = "NEUTRAL"
+# ─────────────────────────────
+# SELECT STOCK
+# ─────────────────────────────
+st.subheader("📉 Chart Analysis")
 
-            results.append({
-                "Saham": ticker,
-                "Harga": sig["price"],
-                "RSI": sig["rsi"],
-                "Signal": signal,
-                "AI Prob UP": round(ai_prob * 100, 2),
-                "AI Signal": ai_signal,
-                "Confidence": sig["confidence"]
-            })
+selected = st.selectbox("Pilih Saham", df_result["Saham"])
 
-    df_result = pd.DataFrame(results)
+df_chart = fetch_data(add_jk(selected), period, interval)
 
-    # ─────────────────────────────
-    # TABLE
-    # ─────────────────────────────
-    st.subheader("📈 Market Scanner")
-    st.dataframe(df_result, use_container_width=True)
+# ─────────────────────────────
+# INDICATORS
+# ─────────────────────────────
+df_chart["MA10"] = df_chart["Close"].rolling(10).mean()
+df_chart["MA30"] = df_chart["Close"].rolling(30).mean()
 
-    # ─────────────────────────────
-    # AI PANEL
-    # ─────────────────────────────
-    st.subheader("🤖 AI Prediction")
+# RSI
+delta = df_chart["Close"].diff()
+gain = delta.clip(lower=0)
+loss = -delta.clip(upper=0)
+avg_gain = gain.rolling(14).mean()
+avg_loss = loss.rolling(14).mean()
+rs = avg_gain / avg_loss
+df_chart["RSI"] = 100 - (100 / (1 + rs))
 
-    selected_ai = st.selectbox("Pilih saham", df_result["Saham"])
+# MACD
+exp1 = df_chart["Close"].ewm(span=12).mean()
+exp2 = df_chart["Close"].ewm(span=26).mean()
+df_chart["MACD"] = exp1 - exp2
+df_chart["SignalLine"] = df_chart["MACD"].ewm(span=9).mean()
 
-    row = df_result[df_result["Saham"] == selected_ai].iloc[0]
+# ─────────────────────────────
+# LAYOUT GRID
+# ─────────────────────────────
+col1, col2 = st.columns([3,1])
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("AI Prob UP (%)", row["AI Prob UP"])
-    col2.metric("AI Signal", row["AI Signal"])
-    col3.metric("Confidence", row["Confidence"])
+# ───────── LEFT (CHART)
+with col1:
 
-    # ─────────────────────────────
-    # CHART
-    # ─────────────────────────────
-    st.subheader("📉 Chart")
+    fig = go.Figure()
 
-    df_chart = fetch_data(add_jk(selected_ai), period=period, interval=interval)
+    # Candlestick
+    fig.add_trace(go.Candlestick(
+        x=df_chart.index,
+        open=df_chart['Open'],
+        high=df_chart['High'],
+        low=df_chart['Low'],
+        close=df_chart['Close'],
+        name='Price'
+    ))
 
-    if df_chart is not None:
+    # MA
+    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA10'], name="MA10"))
+    fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA30'], name="MA30"))
 
-        df_chart["MA10"] = df_chart["Close"].rolling(10).mean()
-        df_chart["MA30"] = df_chart["Close"].rolling(30).mean()
+    fig.update_layout(height=500)
 
-        fig = go.Figure()
+    st.plotly_chart(fig, use_container_width=True)
 
-        fig.add_trace(go.Candlestick(
-            x=df_chart.index,
-            open=df_chart['Open'],
-            high=df_chart['High'],
-            low=df_chart['Low'],
-            close=df_chart['Close']
-        ))
+# ───────── RIGHT (INFO PANEL)
+with col2:
 
-        fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart["MA10"], name="MA10"))
-        fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart["MA30"], name="MA30"))
+    row = df_result[df_result["Saham"] == selected].iloc[0]
 
-        st.plotly_chart(fig, use_container_width=True)
+    st.metric("Harga", row["Harga"])
+    st.metric("RSI", row["RSI"])
+    st.metric("Signal", row["Signal"])
+    st.metric("Confidence", row["Confidence"])
 
-    st.caption(f"Last update: {datetime.now()}")
+# ─────────────────────────────
+# RSI CHART
+# ─────────────────────────────
+st.subheader("📊 RSI")
+
+fig_rsi = go.Figure()
+fig_rsi.add_trace(go.Scatter(x=df_chart.index, y=df_chart["RSI"], name="RSI"))
+fig_rsi.add_hline(y=70)
+fig_rsi.add_hline(y=30)
+
+st.plotly_chart(fig_rsi, use_container_width=True)
+
+# ─────────────────────────────
+# MACD CHART
+# ─────────────────────────────
+st.subheader("📊 MACD")
+
+fig_macd = go.Figure()
+fig_macd.add_trace(go.Scatter(x=df_chart.index, y=df_chart["MACD"], name="MACD"))
+fig_macd.add_trace(go.Scatter(x=df_chart.index, y=df_chart["SignalLine"], name="Signal"))
+
+st.plotly_chart(fig_macd, use_container_width=True)
+
+# ─────────────────────────────
+# FOOTER
+# ─────────────────────────────
+st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+st.warning("⚠️ Educational only - Not financial advice")
