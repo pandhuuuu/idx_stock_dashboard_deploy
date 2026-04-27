@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+from streamlit_autorefresh import st_autorefresh
 
-# IMPORT dari file kamu
+# IMPORT LOGIC KAMU
 from idx_stock_monitor import (
     fetch_data,
     calculate_signals,
@@ -16,18 +17,12 @@ st.set_page_config(
 )
 
 # ─────────────────────────────
-# HEADER
+# SIDEBAR
 # ─────────────────────────────
-st.title("📊 IDX Stock Entry Signal Dashboard")
-st.caption("Advanced Technical Analysis (MA, RSI, MACD, BB, Volume)")
-
-# ─────────────────────────────
-# SIDEBAR INPUT
-# ─────────────────────────────
-st.sidebar.header("⚙️ Settings")
+st.sidebar.title("⚙️ Settings")
 
 tickers_input = st.sidebar.text_area(
-    "Masukkan kode saham (pisah koma)",
+    "Kode Saham (pisah koma)",
     ",".join(DEFAULT_TICKERS[:10])
 )
 
@@ -43,29 +38,41 @@ interval = st.sidebar.selectbox(
     index=0
 )
 
-run_button = st.sidebar.button("🚀 Scan Saham")
+run_button = st.sidebar.button("🚀 Scan Sekarang")
+
+# AUTO REFRESH
+auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
+refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
+
+if auto_refresh:
+    st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
 
 # ─────────────────────────────
-# MAIN LOGIC
+# HEADER
 # ─────────────────────────────
-if run_button:
+st.title("📊 IDX Stock Entry Signal Dashboard")
+st.caption("Multi-Factor Technical Analysis (MA, RSI, MACD, BB, Volume)")
+
+# ─────────────────────────────
+# TRIGGER SCAN
+# ─────────────────────────────
+if run_button or auto_refresh:
 
     tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
 
     results = []
 
     progress = st.progress(0)
-    status_text = st.empty()
+    status = st.empty()
 
     for i, ticker in enumerate(tickers):
-        status_text.text(f"Scanning {ticker}...")
+        status.text(f"Scanning {ticker}...")
 
         df = fetch_data(add_jk(ticker), period=period, interval=interval)
 
         if df is not None:
             sig = calculate_signals(df)
 
-            # tentukan signal
             if sig["bull_score"] > sig["bear_score"] + 1:
                 signal = "BUY"
             elif sig["bear_score"] > sig["bull_score"] + 1:
@@ -101,7 +108,7 @@ if run_button:
 
         progress.progress((i + 1) / len(tickers))
 
-    status_text.text("✅ Scan selesai!")
+    status.text("✅ Scan selesai!")
 
     df_result = pd.DataFrame(results)
 
@@ -120,6 +127,24 @@ if run_button:
     col2.metric("SELL", sell_count)
     col3.metric("NEUTRAL", neutral_count)
 
+    # MARKET SENTIMENT
+    total = len(df_result)
+    if total > 0:
+        buy_pct = buy_count / total * 100
+        sell_pct = sell_count / total * 100
+
+        if buy_pct > sell_pct + 10:
+            sentiment = "🐂 BULLISH"
+            color = "green"
+        elif sell_pct > buy_pct + 10:
+            sentiment = "🐻 BEARISH"
+            color = "red"
+        else:
+            sentiment = "⚖️ NEUTRAL"
+            color = "orange"
+
+        st.markdown(f"### Market Sentiment: :{color}[{sentiment}]")
+
     # ─────────────────────────────
     # TABLE
     # ─────────────────────────────
@@ -131,7 +156,7 @@ if run_button:
     )
 
     # ─────────────────────────────
-    # FILTER TOP SIGNAL
+    # TOP SIGNAL
     # ─────────────────────────────
     st.subheader("🔥 Top Signals")
 
@@ -155,4 +180,4 @@ if run_button:
     st.warning("⚠️ Not financial advice. For educational purposes only.")
 
 else:
-    st.info("Klik tombol **Scan Saham** di sidebar untuk mulai analisis.")
+    st.info("Klik **Scan Sekarang** atau aktifkan Auto Refresh di sidebar.")
