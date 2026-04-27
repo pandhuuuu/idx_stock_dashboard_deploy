@@ -17,7 +17,7 @@ st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
 
 # ─────────────────────────────
 
-# ✅ TAMBAHAN: SECTOR MAP
+# SECTOR MAP
 
 # ─────────────────────────────
 
@@ -184,62 +184,42 @@ if df_result.empty:
     st.error("❌ Tidak ada data. Cek ticker atau koneksi.")
     st.stop()
 
-# ACTION
 df_result["Action"] = df_result["Signal"].apply(
     lambda x: "HOLD" if x == "NEUTRAL" else x
 )
 
-# ✅ TAMBAHAN SECTOR
+# SECTOR
 df_result["Sector"] = df_result["Saham"].map(SECTOR_MAP).fillna("Others")
 
-# ─────────────────────────────
 # SUMMARY
-# ─────────────────────────────
 st.subheader("📊 Market Summary")
 
 col1, col2, col3 = st.columns(3)
-
 col1.metric("BUY", (df_result["Signal"] == "BUY").sum())
 col2.metric("SELL", (df_result["Signal"] == "SELL").sum())
 col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
 
-# ─────────────────────────────
-# TABLE UTAMA (TIDAK DIHAPUS)
-# ─────────────────────────────
+# TABLE UTAMA
 st.subheader("📈 Market Scanner")
+st.dataframe(df_result.sort_values(by="Confidence", ascending=False), use_container_width=True)
 
-st.dataframe(
-    df_result.sort_values(by="Confidence", ascending=False),
-    use_container_width=True
-)
-
-# ─────────────────────────────
-# ✅ TAMBAHAN: TABLE PER SEKTOR
-# ─────────────────────────────
+# TABLE PER SEKTOR
 st.subheader("📊 Market Scanner by Sector")
 
-sectors = df_result["Sector"].unique()
-
-for sector in sorted(sectors):
-    sector_df = df_result[df_result["Sector"] == sector]\
-        .sort_values(by="Confidence", ascending=False)
+for sector in sorted(df_result["Sector"].unique()):
+    sector_df = df_result[df_result["Sector"] == sector].sort_values(by="Confidence", ascending=False)
 
     if not sector_df.empty:
         with st.expander(f"🏭 {sector} ({len(sector_df)} saham)"):
             st.dataframe(sector_df, use_container_width=True)
 
-# ─────────────────────────────
 # TOP SIGNAL
-# ─────────────────────────────
 st.subheader("🎯 Top Trading Signals")
 
 col_buy, col_sell = st.columns(2)
 
-top_buy = df_result[df_result["Signal"] == "BUY"]\
-    .sort_values(by="Confidence", ascending=False).head(5)
-
-top_sell = df_result[df_result["Signal"] == "SELL"]\
-    .sort_values(by="Confidence", ascending=False).head(5)
+top_buy = df_result[df_result["Signal"] == "BUY"].sort_values(by="Confidence", ascending=False).head(5)
+top_sell = df_result[df_result["Signal"] == "SELL"].sort_values(by="Confidence", ascending=False).head(5)
 
 with col_buy:
     st.markdown("### 🟢 Top BUY")
@@ -249,31 +229,20 @@ with col_sell:
     st.markdown("### 🔴 Top SELL")
     st.dataframe(top_sell, use_container_width=True)
 
-# ─────────────────────────────
 # TRADING PLAN
-# ─────────────────────────────
 st.subheader("💰 Trading Plan Recommendation")
 
 plan_df = df_result[[
-    "Saham",
-    "Harga",
-    "Entry",
-    "Take Profit",
-    "Cut Loss",
-    "RR Ratio",
-    "Action",
-    "Confidence"
+    "Saham", "Harga", "Entry", "Take Profit",
+    "Cut Loss", "RR Ratio", "Action", "Confidence"
 ]].sort_values(by="Confidence", ascending=False)
 
 st.dataframe(plan_df, use_container_width=True)
 
-# ─────────────────────────────
 # CHART
-# ─────────────────────────────
 st.subheader("📉 Chart")
 
 selected = st.selectbox("Pilih Saham", df_result["Saham"])
-
 row = df_result[df_result["Saham"] == selected].iloc[0]
 
 df_chart = fetch_data(add_jk(selected), period=period, interval=interval)
@@ -284,9 +253,7 @@ if df_chart is not None:
 else:
     st.warning("Data chart tidak tersedia")
 
-# ─────────────────────────────
 # FOOTER
-# ─────────────────────────────
 st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 st.warning("⚠️ Not financial advice")
 ```
