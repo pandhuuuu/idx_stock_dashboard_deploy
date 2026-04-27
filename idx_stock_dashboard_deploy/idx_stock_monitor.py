@@ -49,7 +49,8 @@ DEFAULT_TICKERS = [
     "AALI", "ABBA", "ABDA", "ABMM", "ACES", 
     "ACST", "ADES", "ADHI", "AISA", "AKKU", 
     "AKPI", "AKRA", "AKSI", "ALDO", "ALKA", 
-    "ALMI", "ALTO", "AMAG", "AMFG", "AMIN", 
+    "ALMI", "ALTO", "AMAG", "AMFG", "AMIN",
+    "PTRO", "WBSA", "DEFI", "MBMA", "BUMI",
 ]
 
 # ──────────────────────────────────────────────
