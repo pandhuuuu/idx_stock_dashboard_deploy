@@ -38,12 +38,15 @@ interval = st.sidebar.selectbox(
 
 run_button = st.sidebar.button("🚀 Scan Sekarang")
 
-# AUTO REFRESH
+# AUTO REFRESH (AMAN)
 auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
 if auto_refresh:
-    st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
+    try:
+        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
+    except:
+        st.warning("Autorefresh module belum terinstall")
 
 # ─────────────────────────────
 # HEADER
@@ -57,7 +60,6 @@ st.caption("Multi-Factor Technical Analysis")
 def plot_candlestick_with_signal(df, ticker, signal):
     fig = go.Figure()
 
-    # Candlestick
     fig.add_trace(go.Candlestick(
         x=df.index,
         open=df['Open'],
@@ -67,7 +69,7 @@ def plot_candlestick_with_signal(df, ticker, signal):
         name='Price'
     ))
 
-    # Moving Average
+    # MA
     df['MA10'] = df['Close'].rolling(10).mean()
     df['MA30'] = df['Close'].rolling(30).mean()
 
@@ -164,6 +166,11 @@ if run_button or auto_refresh:
 
     df_result = pd.DataFrame(results)
 
+    # SAFETY FIX (anti error kosong)
+    if df_result.empty or "Confidence" not in df_result.columns:
+        st.error("❌ Tidak ada data. Cek ticker atau koneksi API.")
+        st.stop()
+
     # ─────────────────────────────
     # SUMMARY
     # ─────────────────────────────
@@ -179,24 +186,6 @@ if run_button or auto_refresh:
     col2.metric("SELL", sell_count)
     col3.metric("NEUTRAL", neutral_count)
 
-    # MARKET SENTIMENT
-    total = len(df_result)
-    if total > 0:
-        buy_pct = buy_count / total * 100
-        sell_pct = sell_count / total * 100
-
-        if buy_pct > sell_pct + 10:
-            sentiment = "🐂 BULLISH"
-            color = "green"
-        elif sell_pct > buy_pct + 10:
-            sentiment = "🐻 BEARISH"
-            color = "red"
-        else:
-            sentiment = "⚖️ NEUTRAL"
-            color = "orange"
-
-        st.markdown(f"### Market Sentiment: :{color}[{sentiment}]")
-
     # ─────────────────────────────
     # TABLE
     # ─────────────────────────────
@@ -206,6 +195,33 @@ if run_button or auto_refresh:
         df_result.sort_values(by="Confidence", ascending=False),
         use_container_width=True
     )
+
+    # ─────────────────────────────
+    # 🔥 REKOMENDASI
+    # ─────────────────────────────
+    st.subheader("🎯 Rekomendasi Trading")
+
+    col_buy, col_sell = st.columns(2)
+
+    top_buy = df_result[df_result["Signal"] == "BUY"]\
+        .sort_values(by="Confidence", ascending=False).head(5)
+
+    top_sell = df_result[df_result["Signal"] == "SELL"]\
+        .sort_values(by="Confidence", ascending=False).head(5)
+
+    with col_buy:
+        st.markdown("### 🟢 Top BUY")
+        if not top_buy.empty:
+            st.dataframe(top_buy, use_container_width=True)
+        else:
+            st.info("Tidak ada sinyal BUY")
+
+    with col_sell:
+        st.markdown("### 🔴 Top SELL")
+        if not top_sell.empty:
+            st.dataframe(top_sell, use_container_width=True)
+        else:
+            st.info("Tidak ada sinyal SELL")
 
     # ─────────────────────────────
     # CHART
