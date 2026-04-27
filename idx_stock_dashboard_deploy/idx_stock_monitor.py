@@ -43,13 +43,55 @@ init(autoreset=True)
 # DEFAULT SAHAM IDX (bisa diubah)
 # ──────────────────────────────────────────────
 DEFAULT_TICKERS = [
-    "BBCA", "BBRI", "TLKM", "ASII", "BMRI",
-    "UNVR", "GOTO", "ICBP", "KLBF", "ANTM",
-    "INDF", "EXCL", "PGAS", "ADRO", "PTBA",
-    "AALI", "ABBA", "ABDA", "ABMM", "ACES", 
-    "ACST", "ADES", "ADHI", "AISA", "AKKU", 
-    "AKPI", "AKRA", "AKSI", "ALDO", "ALKA", 
-    "ALMI", "ALTO", "AMAG", "AMFG", "AMIN", 
+    # BANK & FINANCIAL
+    "BBCA", "BBRI", "BMRI", "BBNI", "BRIS",
+    "BTPS", "BJTM", "BNGA", "BNLI",
+
+    # TELEKOM & TECH
+    "TLKM", "EXCL", "ISAT", "GOTO", "MTEL",
+
+    # CONSUMER GOODS
+    "ICBP", "INDF", "UNVR", "MYOR", "KLBF",
+    "SIDO", "HMSP", "GGRM",
+
+    # ENERGY & MINING
+    "ADRO", "ADMR", "PTBA", "ITMG", "HRUM",
+    "INDY", "MEDC", "PGAS", "AKRA",
+
+    # NICKEL & MATERIALS
+    "ANTM", "INCO", "MDKA", "TINS",
+
+    # INFRASTRUCTURE & CONSTRUCTION
+    "WIKA", "WSKT", "PTPP", "ADHI", "TOTL",
+
+    # PROPERTY & REAL ESTATE
+    "BSDE", "CTRA", "PWON", "SMRA",
+
+    # INDUSTRIAL & AUTOMOTIVE
+    "ASII", "AUTO", "IMAS", "SMSM",
+
+    # RETAIL & DISTRIBUTION
+    "ACES", "AMRT", "MAPI", "RALS", "ERAA",
+
+    # TRANSPORT & LOGISTICS
+    "JSMR", "GIAA", "WEGE",
+
+    # HEALTHCARE
+    "MIKA", "SILO", "HEAL", "KAEF", "INAF",
+
+    # AGRICULTURE
+    "AALI", "LSIP", "TBLA", "BWPT",
+
+    # MEDIA & ENTERTAINMENT
+    "SCMA", "MNCN",
+
+    # OTHERS LIQUID
+    "CPIN", "JPFA", "SMGR", "INTP",
+    "TKIM", "INKP",
+
+    # SMALL-MID (opsional tapi menarik)
+    "ELSA", "ESSA", "RAJA", "WOOD",
+    "BSSR", "DOID", "DEWA",
 ]
 
 # ──────────────────────────────────────────────
