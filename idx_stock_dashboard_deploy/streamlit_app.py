@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
+import time
 
 # IMPORT LOGIC KAMU
 from idx_stock_monitor import (
@@ -45,7 +45,8 @@ auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
 if auto_refresh:
-    st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
+    time.sleep(refresh_interval)
+    st.rerun()
 
 # ─────────────────────────────
 # HEADER
