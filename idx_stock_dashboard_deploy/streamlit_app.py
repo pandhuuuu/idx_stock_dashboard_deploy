@@ -126,8 +126,11 @@ auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 120, 60)
 
 if auto_refresh:
-    time.sleep(refresh_interval)
-    st.rerun()
+    if is_market_open():
+        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
+    else:
+        st.info("Market tutup - auto refresh OFF")
+
 # Watchlist
 st.sidebar.markdown("---")
 st.sidebar.markdown("### ⭐ Watchlist")
