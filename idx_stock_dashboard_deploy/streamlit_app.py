@@ -122,7 +122,7 @@ period           = st.sidebar.selectbox("Period",   ["1mo", "3mo", "6mo", "1y"],
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
-refresh_interval = st.sidebar.caption(market_status(refresh_interval))
+refresh_interval = st.sidebar.slider("Interval (detik)", 10, 120, 60)
 
 def market_status(interval):
     if interval <= 20:
