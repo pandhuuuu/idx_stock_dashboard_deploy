@@ -154,8 +154,8 @@ else:
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 IDX Trading Dashboard PRO")
-st.caption("Scanner · Trading Plan · Sector Analyzer · Chart · Watchlist")
+st.title("📊 MASA GAK ALL-IN 🤔")
+st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥")
 
 
 # ─────────────────────────────
