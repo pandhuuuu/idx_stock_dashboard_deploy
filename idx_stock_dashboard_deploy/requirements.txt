@@ -4,6 +4,5 @@ yfinance
 ta-lib
 plotly
 streamlit-autorefresh
-rich
-colorama
-tabulate
+scikit-learn
+numpy
