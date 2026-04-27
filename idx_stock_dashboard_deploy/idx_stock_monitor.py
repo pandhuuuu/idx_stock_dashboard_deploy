@@ -33,9 +33,9 @@ if not API_KEY:
 # DEFAULT TICKERS
 # ──────────────────────────────────────────────
 DEFAULT_TICKERS = [
-    "BBCA","BBRI","TLKM","ASII","BMRI","UNVR","GOTO","ICBP","KLBF","ANTM",
-    "INDF","EXCL","PGAS","ADRO","PTBA","AALI","ABMM","ACES","ADHI","AKRA",
-    "PTRO","MBMA","BUMI","BBNI","BBTN","BRIS","CPIN","JPFA","MYOR","HMSP",
+    "BBCA","BBRI","BMRI","BRIS","EMAS","ANTM","MDKA","BRMS","ARCI","WBSA",
+    "DEFI","ENRG","PGAS","ADRO","PTBA","AALI","ADMR","ADRO","ADHI","AKRA",
+    "PTRO","MBMA","BUMI","BRPT","MEDC","BUMI","CDIA","JPFA","MYOR","HMSP",
 ]
 
 # ──────────────────────────────────────────────
