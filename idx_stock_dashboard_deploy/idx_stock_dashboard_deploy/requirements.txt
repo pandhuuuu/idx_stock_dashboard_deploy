@@ -1,0 +1,9 @@
+streamlit
+pandas
+yfinance
+ta-lib
+plotly
+streamlit-autorefresh
+rich
+colorama
+tabulate
