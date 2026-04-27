@@ -6,7 +6,6 @@ from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
 import yfinance as yf
 
-# IMPORT LOGIC
 from idx_stock_monitor import (
     fetch_data,
     calculate_signals,
@@ -28,30 +27,23 @@ def get_refresh_interval():
     minute = now.minute
     weekday = now.weekday()
 
-    # Weekend
     if weekday >= 5:
         return 120
 
     current_time = hour + minute / 60
 
-    # Market session 1
     if 9 <= current_time < 12:
         return 15
-
-    # Lunch break
     if 12 <= current_time < 13.5:
         return 60
-
-    # Market session 2
     if 13.5 <= current_time < 15:
         return 15
 
-    # After market
     return 60
 
 
 # ─────────────────────────────
-# SECTOR FUNCTION
+# SECTOR
 # ─────────────────────────────
 def get_sector(ticker: str):
     try:
@@ -73,6 +65,87 @@ def format_signal(val):
 
 
 # ─────────────────────────────
+# CHART FUNCTION (FULL ORIGINAL + FIXED)
+# ─────────────────────────────
+def plot_candlestick_with_signal(df, ticker, signal):
+    df = df.copy()
+
+    df['MA10'] = df['Close'].rolling(10).mean()
+    df['MA30'] = df['Close'].rolling(30).mean()
+
+    delta = df['Close'].diff()
+    gain = delta.clip(lower=0).rolling(14).mean()
+    loss = (-delta.clip(upper=0)).rolling(14).mean()
+    rs = gain / loss.replace(0, float('nan'))
+    df['RSI'] = 100 - (100 / (1 + rs))
+
+    buy_dates, buy_prices = [], []
+    sell_dates, sell_prices = [], []
+
+    for i in range(1, len(df)):
+        ma10_now = df['MA10'].iloc[i]
+        ma10_prev = df['MA10'].iloc[i-1]
+        ma30_now = df['MA30'].iloc[i]
+        ma30_prev = df['MA30'].iloc[i-1]
+        rsi_now = df['RSI'].iloc[i]
+
+        if any(pd.isna([ma10_now, ma10_prev, ma30_now, ma30_prev])):
+            continue
+
+        if ma10_now > ma30_now and ma10_prev <= ma30_prev and rsi_now < 60:
+            buy_dates.append(df.index[i])
+            buy_prices.append(df['Low'].iloc[i] * 0.985)
+
+        elif ma10_now < ma30_now and ma10_prev >= ma30_prev and rsi_now > 40:
+            sell_dates.append(df.index[i])
+            sell_prices.append(df['High'].iloc[i] * 1.015)
+
+    fig = go.Figure()
+
+    fig.add_trace(go.Candlestick(
+        x=df.index,
+        open=df['Open'],
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        name='Price'
+    ))
+
+    fig.add_trace(go.Scatter(
+        x=df.index, y=df['MA10'], name='MA10'
+    ))
+    fig.add_trace(go.Scatter(
+        x=df.index, y=df['MA30'], name='MA30'
+    ))
+
+    if buy_dates:
+        fig.add_trace(go.Scatter(
+            x=buy_dates,
+            y=buy_prices,
+            mode='markers',
+            name='BUY',
+            marker=dict(symbol='triangle-up', size=10, color='green')
+        ))
+
+    if sell_dates:
+        fig.add_trace(go.Scatter(
+            x=sell_dates,
+            y=sell_prices,
+            mode='markers',
+            name='SELL',
+            marker=dict(symbol='triangle-down', size=10, color='red')
+        ))
+
+    fig.update_layout(
+        height=500,
+        xaxis_rangeslider_visible=False,
+        title=f"{ticker} | {signal}"
+    )
+
+    return fig
+
+
+# ─────────────────────────────
 # SIDEBAR
 # ─────────────────────────────
 st.sidebar.title("⚙️ Settings")
@@ -90,34 +163,28 @@ else:
     tickers_source = DEFAULT_TICKERS
 
 tickers_input = st.sidebar.text_area(
-    "Kode Saham (pisah koma)",
+    "Tickers",
     ",".join(tickers_source[:30])
 )
 
-period = st.sidebar.selectbox(
-    "Period", ["1mo", "3mo", "6mo", "1y"], index=1
-)
-
-interval = st.sidebar.selectbox(
-    "Interval", ["1d", "1wk", "1mo"], index=0
-)
+period = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y"], index=1)
+interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
 
 run_button = st.sidebar.button("🚀 Scan")
-
 auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
 
 # ─────────────────────────────
-# AUTO REFRESH ENGINE (FIXED)
+# AUTO REFRESH FIXED
 # ─────────────────────────────
 refresh_interval = get_refresh_interval()
 
 if auto_refresh:
-    st.sidebar.info(f"⏱️ Refresh: {refresh_interval} detik")
+    st.sidebar.info(f"⏱️ Refresh: {refresh_interval}s")
 
     if refresh_interval == 15:
-        st.sidebar.success("🟢 Market Aktif")
+        st.sidebar.success("🟢 Market Active")
     elif refresh_interval == 60:
-        st.sidebar.warning("🟡 Market Tutup / Istirahat")
+        st.sidebar.warning("🟡 Market Pause")
     else:
         st.sidebar.info("🔵 Weekend Mode")
 
@@ -130,12 +197,11 @@ if auto_refresh:
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 IDX Stock Dashboard")
-st.caption("Auto Adaptive Market Scanner (Pro Mode)")
+st.title("📊 IDX Stock Dashboard Pro")
 
 
 # ─────────────────────────────
-# MAIN EXECUTION
+# MAIN
 # ─────────────────────────────
 if run_button or auto_refresh:
 
@@ -161,26 +227,19 @@ if run_button or auto_refresh:
                 signal = "NEUTRAL"
 
             results.append({
-                "Saham": ticker,
-                "Sektor": get_sector(ticker),
-                "Harga": sig["price"],
+                "Ticker": ticker,
+                "Price": sig["price"],
                 "RSI": sig["rsi"],
                 "Signal": signal,
-                "Confidence": sig["confidence"],
-                "Entry": sig["price"],
-                "TP": sig["suggested_tp"],
-                "SL": sig["suggested_sl"],
-                "RR": sig["risk_reward"],
+                "Confidence": sig["confidence"]
             })
 
-        progress.progress((i + 1) / len(tickers))
-
-    status.text("✅ Scan selesai")
+        progress.progress((i+1)/len(tickers))
 
     df_result = pd.DataFrame(results)
 
     if df_result.empty:
-        st.error("Tidak ada data")
+        st.error("No data")
         st.stop()
 
     # ─────────────────────────────
@@ -196,38 +255,29 @@ if run_button or auto_refresh:
     # ─────────────────────────────
     # TABLE
     # ─────────────────────────────
-    st.subheader("📈 Signal Table")
+    st.subheader("📈 Signals")
 
-    df_display = df_result.copy()
-    df_display["Signal"] = df_display["Signal"].apply(format_signal)
+    df_show = df_result.copy()
+    df_show["Signal"] = df_show["Signal"].apply(format_signal)
 
-    st.dataframe(
-        df_display.sort_values("Confidence", ascending=False),
-        use_container_width=True
-    )
+    st.dataframe(df_show.sort_values("Confidence", ascending=False),
+                 use_container_width=True)
 
     # ─────────────────────────────
-    # TOP PICKS
+    # CHART SECTION (FULL FIXED)
     # ─────────────────────────────
-    st.subheader("🔥 Top BUY")
+    st.subheader("📉 Chart")
 
-    st.dataframe(
-        df_result[df_result["Signal"] == "BUY"]
-        .sort_values("Confidence", ascending=False)
-        .head(5),
-        use_container_width=True
-    )
+    selected = st.selectbox("Select Stock", df_result["Ticker"])
 
-    st.subheader("⚠️ Top SELL")
+    df_chart = fetch_data(add_jk(selected), period=period, interval=interval)
 
-    st.dataframe(
-        df_result[df_result["Signal"] == "SELL"]
-        .sort_values("Confidence", ascending=False)
-        .head(5),
-        use_container_width=True
-    )
+    if df_chart is not None:
+        signal = df_result[df_result["Ticker"] == selected]["Signal"].values[0]
+        fig = plot_candlestick_with_signal(df_chart, selected, signal)
+        st.plotly_chart(fig, use_container_width=True)
 
     st.caption(f"Last update: {datetime.now()}")
 
 else:
-    st.info("Klik Scan atau aktifkan Auto Refresh")
+    st.info("Click Scan or enable Auto Refresh")
