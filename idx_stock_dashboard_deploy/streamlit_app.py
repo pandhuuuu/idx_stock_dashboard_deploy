@@ -122,26 +122,15 @@ period           = st.sidebar.selectbox("Period",   ["1mo", "3mo", "6mo", "1y"],
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
-refresh_interval = st.sidebar.slider("Interval (detik)", 10, 120, 60)
+refresh_interval = st.sidebar.caption(market_status(refresh_interval))
 
-if auto_refresh:
-    try:
-        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
-
-        if refresh_interval == 15:
-            st.sidebar.success("🟢 Market Aktif")
-        elif refresh_interval == 60:
-            st.sidebar.warning("🟡 Market Tutup / Istirahat")
-        else:
-            st.sidebar.info("🔵 Weekend Mode")
-
-        st_autorefresh(
-            interval=refresh_interval * 1000,
-            key="auto_refresh"
-        )
-    except:
-        st.error("streamlit-autorefresh belum terinstall")
-
+def market_status(interval):
+    if interval <= 20:
+        return "🟢 Market Aktif"
+    elif interval <= 60:
+        return "🟡 Market Normal"
+    else:
+        return "🔵 Market Close / Slow Mode"
 # Watchlist
 st.sidebar.markdown("---")
 st.sidebar.markdown("### ⭐ Watchlist")
