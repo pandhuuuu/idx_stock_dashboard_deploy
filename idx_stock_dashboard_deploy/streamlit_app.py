@@ -2,7 +2,13 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
+
+# OPTIONAL (biar gak error kalau belum install)
+try:
+    from streamlit_autorefresh import st_autorefresh
+    AUTO_REFRESH_AVAILABLE = True
+except:
+    AUTO_REFRESH_AVAILABLE = False
 
 from idx_stock_monitor import (
     fetch_data,
@@ -14,15 +20,15 @@ from idx_stock_monitor import (
 st.set_page_config(layout="wide", page_title="Trading Dashboard PRO")
 
 # ─────────────────────────────
-# AUTO REFRESH
-# ─────────────────────────────
-if st.sidebar.checkbox("🔄 Auto Refresh"):
-    st_autorefresh(interval=60000, key="refresh")
-
-# ─────────────────────────────
 # SIDEBAR
 # ─────────────────────────────
 st.sidebar.title("⚙️ Control Panel")
+
+# AUTO REFRESH SAFE
+if AUTO_REFRESH_AVAILABLE:
+    auto = st.sidebar.checkbox("🔄 Auto Refresh")
+    if auto:
+        st_autorefresh(interval=60000, key="refresh")
 
 tickers_input = st.sidebar.text_area(
     "Kode Saham",
@@ -54,6 +60,7 @@ for ticker in tickers:
     df = fetch_data(add_jk(ticker), period, interval)
 
     if df is not None:
+
         sig = calculate_signals(df)
 
         if sig["bull_score"] > sig["bear_score"] + 1:
@@ -71,11 +78,23 @@ for ticker in tickers:
             "Confidence": sig["confidence"]
         })
 
+# BUAT DATAFRAME
 df_result = pd.DataFrame(results)
+
+# ─────────────────────────────
+# HANDLE DATA KOSONG
+# ─────────────────────────────
+if df_result.empty:
+    st.error("❌ Tidak ada data. Cek ticker atau koneksi API.")
+    st.stop()
 
 # FILTER
 if filter_signal != "ALL":
     df_result = df_result[df_result["Signal"] == filter_signal]
+
+if df_result.empty:
+    st.warning("⚠️ Tidak ada saham sesuai filter")
+    st.stop()
 
 # ─────────────────────────────
 # TABLE
@@ -95,6 +114,11 @@ st.subheader("📉 Chart Analysis")
 selected = st.selectbox("Pilih Saham", df_result["Saham"])
 
 df_chart = fetch_data(add_jk(selected), period, interval)
+
+# HANDLE DATA CHART
+if df_chart is None or df_chart.empty:
+    st.error("❌ Data chart tidak tersedia")
+    st.stop()
 
 # ─────────────────────────────
 # INDICATORS
@@ -118,16 +142,14 @@ df_chart["MACD"] = exp1 - exp2
 df_chart["SignalLine"] = df_chart["MACD"].ewm(span=9).mean()
 
 # ─────────────────────────────
-# LAYOUT GRID
+# LAYOUT
 # ─────────────────────────────
 col1, col2 = st.columns([3,1])
 
-# ───────── LEFT (CHART)
+# ───────── CHART
 with col1:
-
     fig = go.Figure()
 
-    # Candlestick
     fig.add_trace(go.Candlestick(
         x=df_chart.index,
         open=df_chart['Open'],
@@ -137,7 +159,6 @@ with col1:
         name='Price'
     ))
 
-    # MA
     fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA10'], name="MA10"))
     fig.add_trace(go.Scatter(x=df_chart.index, y=df_chart['MA30'], name="MA30"))
 
@@ -145,9 +166,8 @@ with col1:
 
     st.plotly_chart(fig, use_container_width=True)
 
-# ───────── RIGHT (INFO PANEL)
+# ───────── INFO PANEL
 with col2:
-
     row = df_result[df_result["Saham"] == selected].iloc[0]
 
     st.metric("Harga", row["Harga"])
@@ -156,25 +176,25 @@ with col2:
     st.metric("Confidence", row["Confidence"])
 
 # ─────────────────────────────
-# RSI CHART
+# RSI
 # ─────────────────────────────
 st.subheader("📊 RSI")
 
 fig_rsi = go.Figure()
-fig_rsi.add_trace(go.Scatter(x=df_chart.index, y=df_chart["RSI"], name="RSI"))
+fig_rsi.add_trace(go.Scatter(x=df_chart.index, y=df_chart["RSI"]))
 fig_rsi.add_hline(y=70)
 fig_rsi.add_hline(y=30)
 
 st.plotly_chart(fig_rsi, use_container_width=True)
 
 # ─────────────────────────────
-# MACD CHART
+# MACD
 # ─────────────────────────────
 st.subheader("📊 MACD")
 
 fig_macd = go.Figure()
-fig_macd.add_trace(go.Scatter(x=df_chart.index, y=df_chart["MACD"], name="MACD"))
-fig_macd.add_trace(go.Scatter(x=df_chart.index, y=df_chart["SignalLine"], name="Signal"))
+fig_macd.add_trace(go.Scatter(x=df_chart.index, y=df_chart["MACD"]))
+fig_macd.add_trace(go.Scatter(x=df_chart.index, y=df_chart["SignalLine"]))
 
 st.plotly_chart(fig_macd, use_container_width=True)
 
