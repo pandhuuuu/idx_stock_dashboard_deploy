@@ -163,11 +163,21 @@ def calculate_signals(df: pd.DataFrame) -> dict:
 
     price_now = float(close[-1])
 
-    return {
+   return {
         "price": price_now,
         "rsi": rsi_val,
-        "macd_hist": float(macd_hist[-1]) if len(macd_hist) else 0
-    }
+        "stoch_k": stoch_k,
+        "macd_hist": float(macd_hist[-1]) if len(macd_hist) > 0 else 0,
+    
+        # ✅ FIX UNTUK STREAMLIT (WAJIB ADA)
+        "bull_score": bull_score,
+        "bear_score": bear_score,
+        "confidence": max(bull_score, bear_score),
+    
+        "suggested_sl": suggested_sl,
+        "suggested_tp": suggested_tp,
+        "risk_reward": risk_reward,
+}
 
 
 # ──────────────────────────────────────────────
