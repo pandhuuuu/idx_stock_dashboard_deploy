@@ -18,7 +18,7 @@ st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
 
 
 # ─────────────────────────────
-# COLOR HELPER (ADDED)
+# COLOR HELPERS (SAFE)
 # ─────────────────────────────
 def color_text(value, positive=True):
     color = "green" if positive else "red"
@@ -147,7 +147,7 @@ sector_map = {
 
 
 # ─────────────────────────────
-# MAIN LOGIC
+# MAIN
 # ─────────────────────────────
 if run_button or auto_refresh:
 
@@ -183,9 +183,6 @@ if run_button or auto_refresh:
                 "Take Profit": sig["suggested_tp"],
                 "Cut Loss": sig["suggested_sl"],
                 "RR Ratio": sig["risk_reward"],
-
-                # COLOR STATE
-                "Signal_Color": "green" if signal == "BUY" else "red" if signal == "SELL" else "gray",
             })
 
         progress.progress((i + 1) / len(tickers))
@@ -204,7 +201,7 @@ if run_button or auto_refresh:
 
 
     # ─────────────────────────────
-    # SUMMARY (COLORIZED)
+    # SUMMARY (COLOR FIXED)
     # ─────────────────────────────
     st.subheader("📊 Market Summary")
 
@@ -213,13 +210,13 @@ if run_button or auto_refresh:
     hold_val = (df_result["Action"] == "HOLD").sum()
 
     col1, col2, col3 = st.columns(3)
-    col1.markdown(f"### 🟢 BUY\n{color_text(buy_val, True)}", unsafe_allow_html=True)
-    col2.markdown(f"### 🔴 SELL\n{color_text(sell_val, False)}", unsafe_allow_html=True)
-    col3.markdown(f"### ⚪ HOLD\n{hold_val}")
+    col1.markdown(f"### 🟢 BUY<br>{color_text(buy_val, True)}", unsafe_allow_html=True)
+    col2.markdown(f"### 🔴 SELL<br>{color_text(sell_val, False)}", unsafe_allow_html=True)
+    col3.markdown(f"### ⚪ HOLD<br>{hold_val}", unsafe_allow_html=True)
 
 
     # ─────────────────────────────
-    # SECTOR BREAKDOWN
+    # SECTOR
     # ─────────────────────────────
     st.subheader("🏭 Sector Breakdown")
 
@@ -234,20 +231,32 @@ if run_button or auto_refresh:
 
 
     # ─────────────────────────────
-    # MAIN TABLE (COLOR STYLE)
+    # TABLE (SAFE COLOR STYLE FIX)
     # ─────────────────────────────
     st.subheader("📈 Market Scanner")
 
+    def signal_color(v):
+        if v == "BUY":
+            return "color: green; font-weight:700"
+        elif v == "SELL":
+            return "color: red; font-weight:700"
+        return "color: gray"
+
+    def rsi_color(v):
+        try:
+            v = float(v)
+            if v < 30:
+                return "color: green"
+            elif v > 70:
+                return "color: red"
+            return "color: orange"
+        except:
+            return ""
+
     styled_df = df_result.sort_values(by="Confidence", ascending=False)
 
-    styled_df = styled_df.style.applymap(
-        lambda v: "color: green; font-weight:600" if v == "BUY"
-        else "color: red; font-weight:600" if v == "SELL"
-        else "color: gray",
-        subset=["Signal"]
-    ).applymap(
-        lambda v: "color: green" if v < 30 else "color: red" if v > 70 else "color: orange",
-        subset=["RSI"]
+    styled_df = styled_df.style.map(signal_color, subset=["Signal"]).map(
+        rsi_color, subset=["RSI"]
     )
 
     st.dataframe(styled_df, use_container_width=True)
