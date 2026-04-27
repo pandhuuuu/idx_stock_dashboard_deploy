@@ -43,14 +43,26 @@ init(autoreset=True)
 # DEFAULT SAHAM IDX (bisa diubah)
 # ──────────────────────────────────────────────
 DEFAULT_TICKERS = [
-    "BBCA", "BBRI", "TLKM", "ASII", "BMRI",
-    "UNVR", "GOTO", "ICBP", "KLBF", "ANTM",
-    "INDF", "EXCL", "PGAS", "ADRO", "PTBA",
-    "AALI", "ABBA", "ABDA", "ABMM", "ACES", 
-    "ACST", "ADES", "ADHI", "AISA", "AKKU", 
-    "AKPI", "AKRA", "AKSI", "ALDO", "ALKA", 
-    "ALMI", "ALTO", "AMAG", "AMFG", "AMIN",
-    "PTRO", "WBSA", "DEFI", "MBMA", "BUMI",
+    "BBCA", "BBRI", "TLKM", "ASII", "BMRI", "UNVR",
+    "GOTO", "ICBP", "KLBF", "ANTM", "INDF", "EXCL",
+    "PGAS", "ADRO", "PTBA", "AALI", "ABBA", "ABDA",
+    "ABMM", "ACES", "ACST", "ADES", "ADHI", "AISA",
+    "AKKU", "AKPI", "AKRA", "AKSI", "ALDO", "ALKA",
+    "ALMI", "ALTO", "AMAG", "AMFG", "AMIN", "PTRO",
+    "WBSA", "DEFI", "MBMA", "BUMI", "BBNI", "BBTN",
+    "BRIS", "BRPT", "TPIA", "CPIN", "JPFA", "MYOR",
+    "HMSP", "GGRM", "SMGR", "WIKA", "PTPP", "WSKT",
+    "MIKA", "SIDO", "TOWR", "TBIG", "MNCN", "SCMA",
+    "EMTK", "ERAA", "MAPA", "MAPI", "RALS", "LPPF",
+    "INKP", "TKIM", "BRMS", "MDKA", "HRUM", "ITMG",
+    "UNTR", "SRTG", "PWON", "BSDE", "CTRA", "SMRA",
+    "DMAS", "KIJA", "PNLF", "BBYB", "ARTO", "NCKL",
+    "AMRT", "ACES", "HRTA", "SSMS", "LSIP", "UNSP",
+    "ELSA", "MEDC", "EPMT", "GIAA", "BFIN", "IMAS",
+    "INCO", "INDF", "INDY", "ISAT", "KAEF", "KINO",
+    "KREN", "LPKR", "LPPF", "MAIN", "MPMX", "MTDL",
+    "MYOR", "PGAS", "PPRE", "RAJA", "SILO", "SMSM",
+    "TELE", "TINS", "TOTO", "VIVA", "WIFI", "WOOD",
 ]
 
 # ──────────────────────────────────────────────
