@@ -17,7 +17,7 @@ st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
 
 # ─────────────────────────────
 
-# SECTOR MAP
+# SECTOR MAP (TAMBAHAN)
 
 # ─────────────────────────────
 
@@ -188,7 +188,7 @@ df_result["Action"] = df_result["Signal"].apply(
     lambda x: "HOLD" if x == "NEUTRAL" else x
 )
 
-# SECTOR
+# TAMBAHAN SEKTOR
 df_result["Sector"] = df_result["Saham"].map(SECTOR_MAP).fillna("Others")
 
 # SUMMARY
