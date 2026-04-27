@@ -125,7 +125,7 @@ run_button       = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 120, 60)
 
-if auto_refresh:
+try auto_refresh:
     if is_market_open():
         st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
     else:
