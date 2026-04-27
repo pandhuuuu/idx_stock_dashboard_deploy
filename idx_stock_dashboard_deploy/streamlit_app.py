@@ -16,7 +16,7 @@ from idx_stock_monitor import (
 st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
 
 # ─────────────────────────────
-# SECTOR FUNCTION (NEW)
+# SECTOR FUNCTION (Yahoo fallback)
 # ─────────────────────────────
 def get_sector(ticker: str):
     try:
@@ -60,11 +60,13 @@ if auto_refresh:
     except:
         st.warning("Module autorefresh belum terinstall")
 
+
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
 st.title("📊 IDX Trading Dashboard PRO")
-st.caption("Scanner + Trading Plan + Chart")
+st.caption("Scanner + Trading Plan + Sector Analyzer + Chart")
+
 
 # ─────────────────────────────
 # CHART FUNCTION
@@ -115,6 +117,20 @@ def plot_candlestick_with_signal(df, ticker, signal):
 
 
 # ─────────────────────────────
+# SECTOR MAPPING (FIXED TABLES)
+# ─────────────────────────────
+sector_map = {
+    "BANK": ["BBCA", "BBRI", "BMRI", "BNGA", "BRIS", "BTPS", "BBNI"],
+    "ENERGY": ["ADRO", "PTBA", "PGAS", "MEDC", "ITMG", "INDY"],
+    "GOLD / MINING": ["ANTM", "MDKA", "INCO", "BRMS", "PSAB"],
+    "CONSUMER": ["UNVR", "ICBP", "INDF", "MYOR", "KLBF", "SIDO"],
+    "TELECOM": ["TLKM", "EXCL", "ISAT"],
+    "TECH": ["GOTO", "BUKA", "DCII", "WIFI"],
+    "PROPERTY": ["BSDE", "PWON", "CTRA", "SMRA"],
+}
+
+
+# ─────────────────────────────
 # MAIN LOGIC
 # ─────────────────────────────
 if run_button or auto_refresh:
@@ -142,12 +158,11 @@ if run_button or auto_refresh:
 
             results.append({
                 "Saham": ticker,
-                "Sektor": get_sector(ticker),   # ✅ NEW
+                "Sektor": get_sector(ticker),
                 "Harga": sig["price"],
                 "RSI": sig["rsi"],
                 "Signal": signal,
                 "Confidence": sig["confidence"],
-
                 "Entry": sig["price"],
                 "Take Profit": sig["suggested_tp"],
                 "Cut Loss": sig["suggested_sl"],
@@ -161,7 +176,7 @@ if run_button or auto_refresh:
     df_result = pd.DataFrame(results)
 
     if df_result.empty:
-        st.error("❌ Tidak ada data. Cek ticker atau koneksi.")
+        st.error("❌ Tidak ada data")
         st.stop()
 
     df_result["Action"] = df_result["Signal"].apply(
@@ -179,7 +194,7 @@ if run_button or auto_refresh:
     col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
 
     # ─────────────────────────────
-    # 📌 SECTOR SUMMARY (NEW)
+    # SECTOR SUMMARY
     # ─────────────────────────────
     st.subheader("🏭 Sector Breakdown")
 
@@ -226,7 +241,7 @@ if run_button or auto_refresh:
     # ─────────────────────────────
     # TRADING PLAN
     # ─────────────────────────────
-    st.subheader("💰 Trading Plan Recommendation")
+    st.subheader("💰 Trading Plan")
 
     plan_df = df_result[[
         "Saham",
@@ -243,16 +258,20 @@ if run_button or auto_refresh:
     st.dataframe(plan_df, use_container_width=True)
 
     # ─────────────────────────────
-    # 📌 STOCK PER SECTOR (NEW DETAIL VIEW)
+    # 🏭 SECTOR TABLES (GROUPED)
     # ─────────────────────────────
-    st.subheader("📌 Stocks per Sector")
+    st.subheader("🏭 Sector-Based Tables")
 
-    for sector in df_result["Sektor"].unique():
-        st.markdown(f"### {sector}")
-        st.dataframe(
-            df_result[df_result["Sektor"] == sector],
-            use_container_width=True
-        )
+    for sector_name, sector_list in sector_map.items():
+
+        sector_df = df_result[df_result["Saham"].isin(sector_list)]
+
+        if not sector_df.empty:
+            st.markdown(f"### 📌 {sector_name}")
+            st.dataframe(
+                sector_df.sort_values(by="Confidence", ascending=False),
+                use_container_width=True
+            )
 
     # ─────────────────────────────
     # CHART
@@ -267,8 +286,6 @@ if run_button or auto_refresh:
     if df_chart is not None:
         fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("Data chart tidak tersedia")
 
     # ─────────────────────────────
     # FOOTER
