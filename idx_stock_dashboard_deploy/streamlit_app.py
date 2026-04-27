@@ -123,7 +123,7 @@ period           = st.sidebar.selectbox("Period",   ["1mo", "3mo", "6mo", "1y"],
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
-refresh_interval = st.sidebar.button("Interval (detik)", 10)
+refresh_interval = st.sidebar.slider("Interval (detik)", 10)
 
 if auto_refresh: 
     try: st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
