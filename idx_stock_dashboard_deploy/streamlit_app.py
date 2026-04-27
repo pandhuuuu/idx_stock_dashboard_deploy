@@ -1,7 +1,11 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
+import time
+
+if auto_refresh:
+    time.sleep(refresh_interval)
+    st.rerun()
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
