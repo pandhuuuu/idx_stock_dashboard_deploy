@@ -17,40 +17,20 @@ st.set_page_config(page_title="IDX Stock Dashboard", layout="wide")
 
 # ─────────────────────────────
 
-# SECTOR MAPPING
+# ✅ TAMBAHAN: SECTOR MAP
 
 # ─────────────────────────────
 
 SECTOR_MAP = {
-# BANK
 "BBCA": "Bank", "BBRI": "Bank", "BMRI": "Bank", "BBNI": "Bank", "BRIS": "Bank",
-
-```
-# TELEKOM
 "TLKM": "Telekomunikasi", "EXCL": "Telekomunikasi", "ISAT": "Telekomunikasi",
-
-# CONSUMER
 "ICBP": "Consumer", "INDF": "Consumer", "UNVR": "Consumer", "MYOR": "Consumer",
-
-# ENERGY
 "ADRO": "Energy", "PTBA": "Energy", "MEDC": "Energy", "PGAS": "Energy",
-
-# MINING
 "ANTM": "Mining", "INCO": "Mining", "MDKA": "Mining",
-
-# PROPERTY
 "BSDE": "Property", "CTRA": "Property", "PWON": "Property",
-
-# INFRA
 "JSMR": "Infrastructure", "WIKA": "Infrastructure", "PTPP": "Infrastructure",
-
-# HEALTH
 "MIKA": "Healthcare", "SILO": "Healthcare", "HEAL": "Healthcare",
-
-# RETAIL
 "ACES": "Retail", "AMRT": "Retail", "MAPI": "Retail",
-```
-
 }
 
 # ─────────────────────────────
@@ -63,7 +43,7 @@ st.sidebar.title("⚙️ Settings")
 
 tickers_input = st.sidebar.text_area(
 "Kode Saham (pisah koma)",
-",".join(DEFAULT_TICKERS[:15])
+",".join(DEFAULT_TICKERS[:10])
 )
 
 period = st.sidebar.selectbox(
@@ -98,7 +78,7 @@ st.warning("Module autorefresh belum terinstall")
 # ─────────────────────────────
 
 st.title("📊 IDX Trading Dashboard PRO")
-st.caption("Scanner + Trading Plan + Chart + Sector Analysis")
+st.caption("Scanner + Trading Plan + Chart")
 
 # ─────────────────────────────
 
@@ -119,7 +99,6 @@ fig.add_trace(go.Candlestick(
     name='Price'
 ))
 
-# Moving Average
 df['MA10'] = df['Close'].rolling(10).mean()
 df['MA30'] = df['Close'].rolling(30).mean()
 
@@ -176,7 +155,6 @@ for i, ticker in enumerate(tickers):
     if df is not None:
         sig = calculate_signals(df)
 
-        # SIGNAL
         if sig["bull_score"] > sig["bear_score"] + 1:
             signal = "BUY"
         elif sig["bear_score"] > sig["bull_score"] + 1:
@@ -190,8 +168,6 @@ for i, ticker in enumerate(tickers):
             "RSI": sig["rsi"],
             "Signal": signal,
             "Confidence": sig["confidence"],
-
-            # TRADING PLAN
             "Entry": sig["price"],
             "Take Profit": sig["suggested_tp"],
             "Cut Loss": sig["suggested_sl"],
@@ -213,7 +189,7 @@ df_result["Action"] = df_result["Signal"].apply(
     lambda x: "HOLD" if x == "NEUTRAL" else x
 )
 
-# SECTOR
+# ✅ TAMBAHAN SECTOR
 df_result["Sector"] = df_result["Saham"].map(SECTOR_MAP).fillna("Others")
 
 # ─────────────────────────────
@@ -228,7 +204,17 @@ col2.metric("SELL", (df_result["Signal"] == "SELL").sum())
 col3.metric("HOLD", (df_result["Action"] == "HOLD").sum())
 
 # ─────────────────────────────
-# TABLE PER SEKTOR
+# TABLE UTAMA (TIDAK DIHAPUS)
+# ─────────────────────────────
+st.subheader("📈 Market Scanner")
+
+st.dataframe(
+    df_result.sort_values(by="Confidence", ascending=False),
+    use_container_width=True
+)
+
+# ─────────────────────────────
+# ✅ TAMBAHAN: TABLE PER SEKTOR
 # ─────────────────────────────
 st.subheader("📊 Market Scanner by Sector")
 
