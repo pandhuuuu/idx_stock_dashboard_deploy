@@ -125,13 +125,9 @@ run_button       = st.sidebar.button("🚀 Scan Sekarang Atau Besok")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 120, 60)
 
-def market_status(interval):
-    if interval <= 20:
-        return "🟢 Market Aktif"
-    elif interval <= 60:
-        return "🟡 Market Normal"
-    else:
-        return "🔵 Market Close / Slow Mode"
+if auto_refresh:
+    time.sleep(refresh_interval)
+    st.rerun()
 # Watchlist
 st.sidebar.markdown("---")
 st.sidebar.markdown("### ⭐ Watchlist")
