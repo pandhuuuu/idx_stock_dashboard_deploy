@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
+from datetime import time
 from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
@@ -181,6 +182,50 @@ else:
 st.title("📊 MASA GAK ALL-IN 🤔")
 st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥")
 
+# ─────────────────────────────
+# 🕒 MARKET STATUS (IDX)
+# ─────────────────────────────
+now_wib = datetime.now(ZoneInfo("Asia/Jakarta"))
+current_time = now_wib.time()
+
+open_1  = time(9, 0)
+break_1 = time(12, 0)
+open_2  = time(13, 30)
+close   = time(16, 0)
+
+if current_time < open_1:
+    status = "⏳ PRE-MARKET"
+    color = "#9E9E9E"
+elif open_1 <= current_time < break_1:
+    status = "🟢 OPEN (Sesi 1)"
+    color = "#00C853"
+elif break_1 <= current_time < open_2:
+    status = "🟡 BREAK"
+    color = "#FFD600"
+elif open_2 <= current_time < close:
+    status = "🟢 OPEN (Sesi 2)"
+    color = "#00C853"
+else:
+    status = "🔴 CLOSED"
+    color = "#FF5252"
+
+col1, col2 = st.columns([3,1])
+
+with col1:
+    st.markdown(f"""
+    <div style="background:#1a1d27;padding:12px 20px;border-radius:10px;border:1px solid #2a2d3e">
+        <span style="color:#8b8fa8">Market Status</span><br>
+        <span style="color:{color};font-size:22px;font-weight:700">{status}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div style="background:#1a1d27;padding:12px 20px;border-radius:10px;border:1px solid #2a2d3e;text-align:right">
+        <span style="color:#8b8fa8">WIB Time</span><br>
+        <span style="font-size:20px;font-weight:600">{now_wib.strftime('%H:%M:%S')}</span>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ─────────────────────────────
 # CHART FUNCTION
