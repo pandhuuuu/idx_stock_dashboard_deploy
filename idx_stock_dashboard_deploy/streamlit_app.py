@@ -78,7 +78,7 @@ if "scan_results" not in st.session_state:
 # ─────────────────────────────
 # CACHED FETCH (5 menit)
 # ─────────────────────────────
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def cached_fetch(ticker_jk, period, interval):
     return fetch_data(ticker_jk, period=period, interval=interval)
 
@@ -150,13 +150,13 @@ run_button       = st.sidebar.button("🚀 Scan Sekarang")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
-                    st.caption(f"🔄 Auto refresh aktif setiap {refresh_interval} detik")
 
 if auto_refresh:
     try:
         st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
     except:
         st.warning("Module autorefresh belum terinstall")
+
 
 # Watchlist
 st.sidebar.markdown("---")
@@ -496,7 +496,7 @@ sector_map = {
 # ─────────────────────────────
 # MAIN SCAN
 # ─────────────────────────────
-if run_button or auto_refresh:
+if run_button or st.session_state.scan_results is None:
 
     tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
     results = []
