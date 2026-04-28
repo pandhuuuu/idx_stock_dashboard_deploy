@@ -523,6 +523,45 @@ if st.session_state.scan_results is not None:
         fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
         st.plotly_chart(fig, use_container_width=True)
 
+    # ─────────────────────────────
+    # 🔮 FUTURE PREDICTION CHART
+    # ─────────────────────────────
+    st.subheader("🔮 Prediction Future Chart (30 Hari)")
+
+    df_future = cached_fetch(add_jk(selected), period, interval)
+
+    if df_future is not None:
+        future_dates, future_price = predict_future(df_future, 30)
+
+        fig_pred = go.Figure()
+
+        # Historical price
+        fig_pred.add_trace(go.Scatter(
+            x=df_future.index,
+            y=df_future["Close"],
+            name="Historical",
+            line=dict(color="#2196F3")
+        ))
+
+        # Prediction line
+        fig_pred.add_trace(go.Scatter(
+            x=future_dates,
+            y=future_price,
+            name="Prediction 30D",
+            line=dict(color="#FF9800", dash="dash")
+        ))
+
+        fig_pred.update_layout(
+            height=450,
+            title=f"<b>Future Prediction - {selected}</b>",
+            plot_bgcolor='#131722',
+            paper_bgcolor='#131722',
+            font=dict(color='#D1D4DC'),
+            hovermode="x unified"
+        )
+
+        st.plotly_chart(fig_pred, use_container_width=True)
+
     st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     st.warning("⚠️ Not financial advice. Gunakan sebagai referensi saja.")
 
