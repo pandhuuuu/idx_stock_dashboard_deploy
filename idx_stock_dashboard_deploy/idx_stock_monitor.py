@@ -1,220 +1,176 @@
-import streamlit as st
+# idx_stock_monitor.py
+
 import pandas as pd
-from datetime import datetime
-from streamlit_autorefresh import st_autorefresh
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import numpy as np
 import yfinance as yf
+import requests
+import time
+from functools import lru_cache
+import talib
+import os
+from dotenv import load_dotenv
 
-from idx_stock_monitor import (
-    fetch_data,
-    calculate_signals,
-    add_jk,
-    DEFAULT_TICKERS,
-    get_all_idx_tickers
-)
+load_dotenv()
 
-st.set_page_config(page_title="IDX Stock Dashboard", layout="wide", page_icon="📊")
+API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
 
-# ─────────────────────────────
-# CUSTOM CSS
-# ─────────────────────────────
-st.markdown("""
-<style>
-    .stApp { background-color: #0e1117; }
-    [data-testid="metric-container"] {
-        background: #1a1d27;
-        border: 1px solid #2a2d3e;
-        border-radius: 10px;
-        padding: 16px;
-    }
-    [data-testid="metric-container"] label { color: #8b8fa8 !important; font-size: 13px; }
-    [data-testid="metric-container"] [data-testid="stMetricValue"] {
-        font-size: 28px !important;
-        font-weight: 700;
-    }
-    h2, h3 { border-left: 3px solid #4f8ef7; padding-left: 10px; }
-    [data-testid="stSidebar"] { background-color: #13151f; }
-    .stButton > button {
-        background: linear-gradient(135deg, #4f8ef7, #3a6fd8);
-        color: white;
-        border-radius: 8px;
-        width: 100%;
-    }
-</style>
-""", unsafe_allow_html=True)
+# =========================
+# DEFAULT TICKERS
+# =========================
+DEFAULT_TICKERS = [
+    "BBCA","BBRI","BMRI","BRIS","EMAS","ANTM","MDKA","BRMS","ARCI","WBSA",
+    "DEFI","ENRG","PGAS","ADRO","PTBA","AALI","ADMR","ADHI","AKRA",
+    "PTRO","MBMA","BUMI","BRPT","MEDC","CDIA","JPFA","MYOR","HMSP",
+]
+
+# =========================
+# UTIL
+# =========================
+def add_jk(ticker: str) -> str:
+    return ticker.upper() + ".JK" if not ticker.endswith(".JK") else ticker.upper()
 
 
-# ─────────────────────────────
-# SESSION STATE
-# ─────────────────────────────
-if "watchlist" not in st.session_state:
-    st.session_state.watchlist = []
-
-if "scan_results" not in st.session_state:
-    st.session_state.scan_results = None
-
-
-# ─────────────────────────────
-# CACHED FETCH
-# ─────────────────────────────
-@st.cache_data(ttl=300)
-def cached_fetch(ticker_jk, period, interval):
-    return fetch_data(ticker_jk, period=period, interval=interval)
-
-
-# ─────────────────────────────
-# HELPERS
-# ─────────────────────────────
-def get_sector(ticker: str):
+# =========================
+# AUTO IDX LIST
+# =========================
+@lru_cache(maxsize=1)
+def get_all_idx_tickers():
     try:
-        info = yf.Ticker(add_jk(ticker)).info
-        return info.get("sector", "Unknown")
-    except:
-        return "Unknown"
+        url = "https://raw.githubusercontent.com/datasets/idx-listed-companies/main/data/idx.csv"
+        df = pd.read_csv(url)
+        return df["ticker"].dropna().unique().tolist()
+    except Exception as e:
+        print(f"[AUTO IDX ERROR]: {e}")
+        return None
 
 
-def format_signal(val):
-    if val == "BUY":
-        return "🟢 BUY"
-    elif val == "SELL":
-        return "🔴 SELL"
-    else:
-        return "⚪ NEUTRAL"
-
-
-# ─────────────────────────────
-# SIDEBAR
-# ─────────────────────────────
-st.sidebar.title("⚙️ Settings")
-
-mode = st.sidebar.radio("Mode Data", ["Auto IDX Full"])
-
-if mode == "Auto IDX Full":
+# =========================
+# FETCH DATA
+# =========================
+@lru_cache(maxsize=128)
+def fetch_data(ticker_jk: str, period="3mo", interval="1d"):
     try:
-        tickers_source = get_all_idx_tickers() or DEFAULT_TICKERS
-    except:
-        tickers_source = DEFAULT_TICKERS
-else:
-    tickers_source = DEFAULT_TICKERS
+        df = yf.download(
+            ticker_jk,
+            period=period,
+            interval=interval,
+            progress=False,
+            auto_adjust=True,
+        )
 
-tickers_input = st.sidebar.text_area(
-    "Kode Saham (pisah koma)",
-    ",".join(tickers_source[:30])
-)
+        if df is not None and not df.empty:
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            return df
 
-period   = st.sidebar.selectbox("Period", ["1mo", "3mo", "6mo", "1y"], index=1)
-interval = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
+    except Exception as e:
+        print(f"[YF ERROR] {ticker_jk}: {e}")
 
-run_button   = st.sidebar.button("🚀 Scan Sekarang")
-auto_refresh = st.sidebar.checkbox("🔄 Auto Refresh")
-refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
+    # fallback Alpha Vantage
+    if not API_KEY:
+        return None
 
-# FIX: hanya 1 autorefresh
-if auto_refresh:
     try:
-        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
-    except:
-        st.warning("Module autorefresh belum terinstall")
+        symbol = ticker_jk.replace(".JK", "")
+        url = "https://www.alphavantage.co/query"
+        params = {
+            "function": "TIME_SERIES_DAILY",
+            "symbol": symbol,
+            "apikey": API_KEY,
+        }
 
+        res = requests.get(url, params=params)
+        data = res.json()
 
-# ─────────────────────────────
-# WATCHLIST
-# ─────────────────────────────
-st.sidebar.markdown("---")
-st.sidebar.markdown("### ⭐ Watchlist")
+        if "Time Series (Daily)" not in data:
+            return None
 
-add_watch = st.sidebar.text_input("Tambah ke Watchlist")
-
-if st.sidebar.button("➕ Tambah") and add_watch.strip():
-    t = add_watch.strip().upper()
-    if t not in st.session_state.watchlist:
-        st.session_state.watchlist.append(t)
-        st.toast(f"{t} ditambahkan")
-
-# ─────────────────────────────
-# HEADER
-# ─────────────────────────────
-st.title("📊 IDX Dashboard PRO")
-
-
-# ─────────────────────────────
-# SCAN
-# ─────────────────────────────
-if run_button or auto_refresh:
-
-    tickers = [t.strip().upper() for t in tickers_input.split(",") if t.strip()]
-    results = []
-
-    progress = st.progress(0)
-    status = st.empty()
-
-    for i, ticker in enumerate(tickers):
-
-        status.text(f"Scanning {ticker}...")
-
-        df = cached_fetch(add_jk(ticker), period, interval)
-
-        # ❗ FIX 1: df safety
-        if df is None or df.empty:
-            progress.progress((i + 1) / len(tickers))
-            continue
-
-        sig = calculate_signals(df)
-
-        # ❗ FIX 2: sig safety (INI YANG ERROR KAMU)
-        if sig is None or not isinstance(sig, dict):
-            progress.progress((i + 1) / len(tickers))
-            continue
-
-        bull = sig.get("bull_score", 0)
-        bear = sig.get("bear_score", 0)
-
-        if bull > bear + 1:
-            signal = "BUY"
-        elif bear > bull + 1:
-            signal = "SELL"
-        else:
-            signal = "NEUTRAL"
-
-        results.append({
-            "Saham": ticker,
-            "Sektor": get_sector(ticker),
-            "Harga": sig.get("price", 0),
-            "RSI": sig.get("rsi", 0),
-            "Signal": signal,
-            "Confidence": sig.get("confidence", 0),
-            "Entry": sig.get("price", 0),
-            "Take Profit": sig.get("suggested_tp", 0),
-            "Cut Loss": sig.get("suggested_sl", 0),
-            "RR Ratio": sig.get("risk_reward", 0),
+        df = pd.DataFrame.from_dict(data["Time Series (Daily)"], orient="index")
+        df = df.rename(columns={
+            "1. open": "Open",
+            "2. high": "High",
+            "3. low": "Low",
+            "4. close": "Close",
+            "5. volume": "Volume",
         })
 
-        progress.progress((i + 1) / len(tickers))
+        df.index = pd.to_datetime(df.index)
+        df = df.sort_index().astype(float)
 
-    status.text("Done")
-    st.session_state.scan_results = pd.DataFrame(results)
+        time.sleep(12)
+        return df
+
+    except Exception as e:
+        print(f"[AV ERROR] {ticker_jk}: {e}")
+        return None
 
 
-# ─────────────────────────────
-# RENDER
-# ─────────────────────────────
-if st.session_state.scan_results is not None:
+# =========================
+# SIGNALS (FULL LOGIC TETAP)
+# =========================
+def calculate_signals(df: pd.DataFrame):
+    high = df["High"].values.astype(float)
+    low = df["Low"].values.astype(float)
+    close = df["Close"].values.astype(float)
 
-    df_result = st.session_state.scan_results
+    if len(close) < 35:
+        return None
 
-    if df_result.empty:
-        st.warning("Tidak ada data valid")
-        st.stop()
+    price_now = float(close[-1])
 
-    st.subheader("📊 Summary")
+    sma_s = pd.Series(close).rolling(10).mean().values
+    sma_l = pd.Series(close).rolling(30).mean().values
+    sma_bull = sma_s[-1] > sma_l[-1]
 
-    col1, col2, col3 = st.columns(3)
-    col1.metric("BUY", (df_result["Signal"] == "BUY").sum())
-    col2.metric("SELL", (df_result["Signal"] == "SELL").sum())
-    col3.metric("HOLD", (df_result["Signal"] == "NEUTRAL").sum())
+    rsi = talib.RSI(close, 14)
+    rsi_val = rsi[-1] if not np.isnan(rsi[-1]) else 50
 
-    st.dataframe(df_result, use_container_width=True)
+    macd, macdsignal, _ = talib.MACD(close)
+    macd_cross_up = macd[-2] < macdsignal[-2] and macd[-1] > macdsignal[-1]
+    macd_cross_down = macd[-2] > macdsignal[-2] and macd[-1] < macdsignal[-1]
+    macd_bull = macd[-1] > macdsignal[-1]
 
-else:
-    st.info("Klik Scan Sekarang")
+    plus_di = talib.PLUS_DI(high, low, close, 14)
+    minus_di = talib.MINUS_DI(high, low, close, 14)
+    adx = talib.ADX(high, low, close, 14)
+
+    adx_val = adx[-1]
+    dmi_bull = plus_di[-1] > minus_di[-1] and adx_val > 25
+    dmi_bear = minus_di[-1] > plus_di[-1] and adx_val > 25
+
+    bull = 0
+    bear = 0
+
+    if sma_bull:
+        bull += 1
+    else:
+        bear += 1
+
+    if rsi_val < 30:
+        bull += 2
+    elif rsi_val > 70:
+        bear += 2
+
+    if macd_cross_up:
+        bull += 2
+    elif macd_cross_down:
+        bear += 2
+
+    if dmi_bull:
+        bull += 2
+    elif dmi_bear:
+        bear += 2
+
+    signal = "BUY" if bull > bear + 1 else "SELL" if bear > bull + 1 else "HOLD"
+
+    return {
+        "price": price_now,
+        "rsi": rsi_val,
+        "bull_score": bull,
+        "bear_score": bear,
+        "confidence": max(bull, bear) / (bull + bear) * 100 if (bull + bear) else 50,
+        "signal": signal,
+        "suggested_tp": price_now * 1.03,
+        "suggested_sl": price_now * 0.98,
+        "risk_reward": 2.0,
+    }
