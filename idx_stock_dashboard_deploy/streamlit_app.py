@@ -147,7 +147,7 @@ tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tick
 period           = st.sidebar.selectbox("Period",   ["1mo", "3mo", "6mo", "1y", "2y", "3y", "5y", "10y"], index=1)
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang")
-auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
+st_autorefresh(interval=60 * 1000, key="auto_refresh")  # 60 detik
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
 if auto_refresh:
