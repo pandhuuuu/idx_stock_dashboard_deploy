@@ -105,21 +105,27 @@ def format_signal(val):
 # =============================
 # TREND DETECTION (NEW)
 # =============================
-def detect_trend(ticker, period, interval):
-    df = cached_fetch(add_jk(ticker), period, interval)
-    if df is None or len(df) < 20:
-        return "SIDEWAYS"
+if "Trend" not in df_result.columns:
+    def detect_trend_safe(ticker):
+        try:
+            df = cached_fetch(add_jk(ticker), period, interval)
+            if df is None or len(df) < 20:
+                return "SIDEWAYS"
 
-    y = df["Close"].dropna().values
-    x = np.arange(len(y))
-    slope, _ = np.polyfit(x, y, 1)
+            y = df["Close"].dropna().values
+            x = np.arange(len(y))
+            slope, _ = np.polyfit(x, y, 1)
 
-    if slope > 0:
-        return "UPTREND 🟩"
-    elif slope < 0:
-        return "DOWNTREND 🟥"
-    else:
-        return "SIDEWAYS 🟧"
+            if slope > 0:
+                return "UPTREND"
+            elif slope < 0:
+                return "DOWNTREND"
+            else:
+                return "SIDEWAYS"
+        except:
+            return "SIDEWAYS"
+
+    df_result["Trend"] = df_result["Saham"].apply(detect_trend_safe)
 
 # ─────────────────────────────
 # 🔮 FUTURE PREDICTION FUNCTION (FIX ERROR)
