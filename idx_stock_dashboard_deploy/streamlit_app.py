@@ -49,7 +49,7 @@ st.markdown("""
         border-radius: 12px;
         font-weight: 600;
         padding: 8px 20px;
-        width: 100%;
+        width: 200%;
     }
     .stButton > button:hover { opacity: 0.9; }
 
