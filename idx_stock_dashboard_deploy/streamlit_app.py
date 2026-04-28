@@ -179,7 +179,7 @@ else:
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("📊 MASA GAK ALL-IN 🤔")
+st.title("🤔")
 st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥")
 
 # ─────────────────────────────
