@@ -302,12 +302,10 @@ def plot_candlestick_with_signal(df, ticker, signal):
     )
 
     # Candlestick
-    fig.add_trace(go.Candlestick(
     # ===============================
     # 🔥 BANDAR VISUALIZATION
     # ===============================
     
-    # Bandar Masuk
     bm = df[df['bandar_masuk']]
     fig.add_trace(go.Scatter(
         x=bm.index,
@@ -315,9 +313,8 @@ def plot_candlestick_with_signal(df, ticker, signal):
         mode='markers',
         name='Bandar Masuk',
         marker=dict(symbol='triangle-up', size=12, color='lime'),
-    ))
+    ), row=1, col=1)
     
-    # Bandar Keluar
     bk = df[df['bandar_keluar']]
     fig.add_trace(go.Scatter(
         x=bk.index,
@@ -325,9 +322,8 @@ def plot_candlestick_with_signal(df, ticker, signal):
         mode='markers',
         name='Bandar Keluar',
         marker=dict(symbol='triangle-down', size=12, color='red'),
-    ))
+    ), row=1, col=1)
     
-    # Extreme Volume
     ext = df[df['extreme']]
     fig.add_trace(go.Scatter(
         x=ext.index,
@@ -335,9 +331,8 @@ def plot_candlestick_with_signal(df, ticker, signal):
         mode='markers',
         name='Extreme',
         marker=dict(symbol='circle', size=10, color='yellow'),
-    ))
+    ), row=1, col=1)
     
-    # Battle Zone
     bt = df[df['battle']]
     fig.add_trace(go.Scatter(
         x=bt.index,
@@ -345,20 +340,22 @@ def plot_candlestick_with_signal(df, ticker, signal):
         mode='markers',
         name='Battle Zone',
         marker=dict(symbol='x', size=10, color='purple'),
-    ))
+    ), row=1, col=1)
+    
+    # Candlestick (HARUS TERPISAH)
+    fig.add_trace(go.Candlestick(
         x=df.index,
         open=df['Open'], high=df['High'],
-        low=df['Low'],   close=df['Close'],
+        low=df['Low'], close=df['Close'],
         name='Price',
         increasing_line_color='#26a69a',
         decreasing_line_color='#ef5350',
     ), row=1, col=1)
-
-    # MA
-    fig.add_trace(go.Scatter(x=df.index, y=df['MA10'], name='MA10',
-        line=dict(color='#2196F3', width=1.5)), row=1, col=1)
-    fig.add_trace(go.Scatter(x=df.index, y=df['MA30'], name='MA30',
-        line=dict(color='#FF9800', width=1.5)), row=1, col=1)
+        # MA
+        fig.add_trace(go.Scatter(x=df.index, y=df['MA10'], name='MA10',
+            line=dict(color='#2196F3', width=1.5)), row=1, col=1)
+        fig.add_trace(go.Scatter(x=df.index, y=df['MA30'], name='MA30',
+            line=dict(color='#FF9800', width=1.5)), row=1, col=1)
 
     # Trendline
     if len(lows_idx) >= 2:
