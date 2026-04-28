@@ -168,11 +168,33 @@ def calculate_signals(df: pd.DataFrame) -> dict:
     high  = df["High"].values.astype(float)
     low   = df["Low"].values.astype(float)
     close = df["Close"].values.astype(float)
+    open_ = df["Open"].values.astype(float)
+    volume = df["Volume"].values.astype(float)
 
     if len(close) < 35:          # not enough bars for KST
         return None
 
     price_now = float(close[-1])
+    # ===============================
+    # 🔥 BANDARMOLOGY (NEW)
+    # ===============================
+    vol_ma = pd.Series(volume).rolling(20).mean().values
+    
+    volume_spike = volume[-1] > 2 * vol_ma[-1] if not np.isnan(vol_ma[-1]) else False
+    extreme_volume = volume[-1] > 3.5 * vol_ma[-1] if not np.isnan(vol_ma[-1]) else False
+    
+    bullish_candle = close[-1] > open_[-1]
+    bearish_candle = close[-1] < open_[-1]
+    
+    bandar_masuk = volume_spike and bullish_candle
+    bandar_keluar = volume_spike and bearish_candle
+    
+    extreme_buy = extreme_volume and bullish_candle
+    extreme_sell = extreme_volume and bearish_candle
+    
+    body = abs(close[-1] - open_[-1])
+    candle_range = max(high[-1] - low[-1], 1e-6)
+    battle_zone = (body / candle_range < 0.3) and volume_spike
 
     # ── SMA crossover (short 10 / long 30) ──
     sma_s = pd.Series(close).rolling(10).mean().values
@@ -270,6 +292,28 @@ def calculate_signals(df: pd.DataFrame) -> dict:
         bull_score += 0.5
     else:
         bear_score += 0.5
+     
+    # ===============================
+    # 🔥 BANDAR BOOST (NEW)
+    # ===============================
+    if volume_spike:
+        bull_score += 1
+    
+    if bandar_masuk:
+        bull_score += 2
+    
+    if bandar_keluar:
+        bear_score += 2
+    
+    if extreme_buy:
+        bull_score += 3
+    
+    if extreme_sell:
+        bear_score += 3
+    
+    if battle_zone:
+        bull_score += 0.5
+        bear_score += 0.5
 
     bull_score = round(bull_score, 1)
     bear_score = round(bear_score, 1)
@@ -295,6 +339,12 @@ def calculate_signals(df: pd.DataFrame) -> dict:
         "suggested_sl":  round(suggested_sl, 2),
         "suggested_tp":  round(suggested_tp, 2),
         "risk_reward":   round(risk_reward, 2),
+        #Bandarmology
+        "bandar_masuk": bandar_masuk,
+        "bandar_keluar": bandar_keluar,
+        "battle_zone": battle_zone,
+        "volume_spike": volume_spike,
+        "extreme": extreme_volume,
         # ── new keys from PDF indicators ──
         "signal":        signal,
         "adx":           round(adx_val, 2),
