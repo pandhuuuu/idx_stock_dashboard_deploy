@@ -423,7 +423,7 @@ def plot_candlestick_with_signal(df, ticker, signal):
 
     # Volume
     if 'Volume' in df.columns:
-    vol_colors = []
+            vol_colors = []
     for i in range(len(df)):
         if df['extreme'].iloc[i]:
             vol_colors.append('#FFD700')  # emas
