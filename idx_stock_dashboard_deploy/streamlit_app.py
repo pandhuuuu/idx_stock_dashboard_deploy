@@ -150,7 +150,7 @@ run_button       = st.sidebar.button("🚀 Scan Sekarang")
 auto_refresh     = st.sidebar.checkbox("🔄 Auto Refresh")
 refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
-        st.caption(f"🔄 Auto refresh aktif setiap {refresh_interval} detik")
+                    st.caption(f"🔄 Auto refresh aktif setiap {refresh_interval} detik")
 
 if auto_refresh:
     try:
