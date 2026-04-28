@@ -680,11 +680,8 @@ if st.session_state.scan_results is not None:
     👉 Kesimpulan: **{insight}**
     """)
 
+      st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
 else:
     st.warning("Data tidak cukup untuk prediksi (minimal 30 candle)")
 
-    st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    st.warning("⚠️ Not financial advice. Gunakan sebagai referensi saja.")
-
-else:
-    st.info("👈 Klik **Scan Sekarang** atau aktifkan Auto Refresh untuk memulai.")
