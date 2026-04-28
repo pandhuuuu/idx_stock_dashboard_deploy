@@ -233,6 +233,23 @@ with col2:
 # ─────────────────────────────
 def plot_candlestick_with_signal(df, ticker, signal):
     df = df.copy()
+    # ===============================
+    # 🔥 BANDAR DATA FOR CHART
+    # ===============================
+    df['vol_ma'] = df['Volume'].rolling(20).mean()
+    
+    df['volume_spike'] = df['Volume'] > 2 * df['vol_ma']
+    df['extreme'] = df['Volume'] > 3.5 * df['vol_ma']
+    
+    df['bullish'] = df['Close'] > df['Open']
+    df['bearish'] = df['Close'] < df['Open']
+    
+    df['bandar_masuk'] = df['volume_spike'] & df['bullish']
+    df['bandar_keluar'] = df['volume_spike'] & df['bearish']
+    
+    body = abs(df['Close'] - df['Open'])
+    range_ = (df['High'] - df['Low']).replace(0, 1e-6)
+    df['battle'] = (body / range_ < 0.3) & df['volume_spike']
 
     df['MA10'] = df['Close'].rolling(10).mean()
     df['MA30'] = df['Close'].rolling(30).mean()
@@ -286,6 +303,49 @@ def plot_candlestick_with_signal(df, ticker, signal):
 
     # Candlestick
     fig.add_trace(go.Candlestick(
+    # ===============================
+    # 🔥 BANDAR VISUALIZATION
+    # ===============================
+    
+    # Bandar Masuk
+    bm = df[df['bandar_masuk']]
+    fig.add_trace(go.Scatter(
+        x=bm.index,
+        y=bm['Low'] * 0.97,
+        mode='markers',
+        name='Bandar Masuk',
+        marker=dict(symbol='triangle-up', size=12, color='lime'),
+    ))
+    
+    # Bandar Keluar
+    bk = df[df['bandar_keluar']]
+    fig.add_trace(go.Scatter(
+        x=bk.index,
+        y=bk['High'] * 1.03,
+        mode='markers',
+        name='Bandar Keluar',
+        marker=dict(symbol='triangle-down', size=12, color='red'),
+    ))
+    
+    # Extreme Volume
+    ext = df[df['extreme']]
+    fig.add_trace(go.Scatter(
+        x=ext.index,
+        y=ext['Close'],
+        mode='markers',
+        name='Extreme',
+        marker=dict(symbol='circle', size=10, color='yellow'),
+    ))
+    
+    # Battle Zone
+    bt = df[df['battle']]
+    fig.add_trace(go.Scatter(
+        x=bt.index,
+        y=bt['Close'],
+        mode='markers',
+        name='Battle Zone',
+        marker=dict(symbol='x', size=10, color='purple'),
+    ))
         x=df.index,
         open=df['Open'], high=df['High'],
         low=df['Low'],   close=df['Close'],
@@ -366,14 +426,25 @@ def plot_candlestick_with_signal(df, ticker, signal):
 
     # Volume
     if 'Volume' in df.columns:
-        vol_colors = [
-            '#26a69a' if df['Close'].iloc[i] >= df['Open'].iloc[i] else '#ef5350'
-            for i in range(len(df))
-        ]
-        fig.add_trace(go.Bar(
-            x=df.index, y=df['Volume'], name='Volume',
-            marker_color=vol_colors, opacity=0.6, showlegend=False
-        ), row=2, col=1)
+    vol_colors = []
+    for i in range(len(df)):
+        if df['extreme'].iloc[i]:
+            vol_colors.append('#FFD700')  # emas
+        elif df['volume_spike'].iloc[i]:
+            vol_colors.append('#00E5FF')  # biru terang
+        elif df['Close'].iloc[i] >= df['Open'].iloc[i]:
+            vol_colors.append('#26a69a')
+        else:
+            vol_colors.append('#ef5350')
+
+    fig.add_trace(go.Bar(
+        x=df.index,
+        y=df['Volume'],
+        name='Volume',
+        marker_color=vol_colors,
+        opacity=0.7,
+        showlegend=False
+    ), row=2, col=1)
 
     # RSI
     fig.add_trace(go.Scatter(
@@ -471,6 +542,10 @@ if run_button or auto_refresh:
                 "Take Profit": round(sig["suggested_tp"], 2),
                 "Cut Loss":    round(sig["suggested_sl"], 2),
                 "RR Ratio":    round(sig["risk_reward"], 2),
+                "bandar_masuk": sig.get("bandar_masuk", False),
+                "bandar_keluar": sig.get("bandar_keluar", False),
+                "volume_spike": sig.get("volume_spike", False),
+                "battle_zone": sig.get("battle_zone", False),
             })
 
         progress.progress((i + 1) / len(tickers))
@@ -589,6 +664,14 @@ if st.session_state.scan_results is not None:
 
     row      = df_result[df_result["Saham"] == selected].iloc[0]
     df_chart = cached_fetch(add_jk(selected), period, interval)
+    st.markdown("### 🧠 Bandarmology Insight")
+
+    col1, col2, col3, col4 = st.columns(4)
+    
+    col1.metric("Bandar Masuk", "YES" if row.get("bandar_masuk", False) else "NO")
+    col2.metric("Bandar Keluar", "YES" if row.get("bandar_keluar", False) else "NO")
+    col3.metric("Volume Spike", "YES" if row.get("volume_spike", False) else "NO")
+    col4.metric("Battle Zone", "YES" if row.get("battle_zone", False) else "NO")
 
     if df_chart is not None:
         fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
