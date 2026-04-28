@@ -547,43 +547,141 @@ if st.session_state.scan_results is not None:
         st.plotly_chart(fig, use_container_width=True)
 
     # ─────────────────────────────
-    # 🔮 FUTURE PREDICTION CHART
+    # 🔮 FUTURE PREDICTION CHART (PRO VERSION)
     # ─────────────────────────────
-    st.subheader("🔮 Prediction Future Chart (30 Hari)")
-
+    st.subheader("🔮 Prediction Future Chart (30 Hari - Smart Projection)")
+    
     df_future = cached_fetch(add_jk(selected), period, interval)
-
-    if df_future is not None:
-        future_dates, future_price = predict_future(df_future, 30)
-
+    
+    if df_future is not None and len(df_future) > 30:
+    
+        import numpy as np
+    
+        # =========================
+        # PREP DATA
+        # =========================
+        df_future = df_future.copy()
+        df_future["MA20"] = df_future["Close"].rolling(20).mean()
+    
+        y = df_future["Close"].dropna().values
+        x = np.arange(len(y))
+    
+        # Linear regression
+        slope, intercept = np.polyfit(x, y, 1)
+    
+        future_x = np.arange(len(y), len(y) + 30)
+        future_price = slope * future_x + intercept
+    
+        future_dates = pd.date_range(
+            start=df_future.index[-1],
+            periods=31,
+            freq="D"
+        )[1:]
+    
+        last_price = y[-1]
+        projected_price = future_price[-1]
+    
+        expected_return = ((projected_price - last_price) / last_price) * 100
+    
+        trend = "📈 Uptrend" if slope > 0 else "📉 Downtrend"
+    
+        # Confidence sederhana (berdasarkan volatilitas)
+        volatility = np.std(y[-20:])
+        confidence = max(0, 100 - (volatility / last_price * 100))
+    
+        # =========================
+        # CHART
+        # =========================
         fig_pred = go.Figure()
-
-        # Historical price
+    
+        # Historical
         fig_pred.add_trace(go.Scatter(
             x=df_future.index,
             y=df_future["Close"],
-            name="Historical",
-            line=dict(color="#2196F3")
+            name="Price",
+            line=dict(color="#4f8ef7", width=2)
         ))
-
+    
+        # MA20
+        fig_pred.add_trace(go.Scatter(
+            x=df_future.index,
+            y=df_future["MA20"],
+            name="MA20",
+            line=dict(color="#00C853", width=1.5)
+        ))
+    
+        # Trendline
+        trend_line = slope * np.arange(len(df_future)) + intercept
+        fig_pred.add_trace(go.Scatter(
+            x=df_future.index,
+            y=trend_line,
+            name="Trend",
+            line=dict(color="#AB47BC", dash="dot")
+        ))
+    
         # Prediction line
         fig_pred.add_trace(go.Scatter(
             x=future_dates,
             y=future_price,
-            name="Prediction 30D",
-            line=dict(color="#FF9800", dash="dash")
+            name="Forecast 30D",
+            line=dict(color="#FF9800", dash="dash", width=2)
         ))
-
+    
+        # Area prediction
+        fig_pred.add_trace(go.Scatter(
+            x=future_dates,
+            y=future_price,
+            fill="tozeroy",
+            mode="lines",
+            line=dict(color="rgba(255,152,0,0.2)"),
+            name="Projection Area"
+        ))
+    
         fig_pred.update_layout(
-            height=450,
-            title=f"<b>Future Prediction - {selected}</b>",
+            height=520,
+            title=f"<b>AI Trend Prediction - {selected}</b>",
             plot_bgcolor='#131722',
             paper_bgcolor='#131722',
             font=dict(color='#D1D4DC'),
-            hovermode="x unified"
+            hovermode="x unified",
+            legend=dict(orientation="h"),
+            margin=dict(l=40, r=40, t=60, b=40)
         )
-
+    
         st.plotly_chart(fig_pred, use_container_width=True)
+    
+        # =========================
+        # ANALYSIS PANEL
+        # =========================
+        st.markdown("### 📊 Prediction Analysis")
+    
+        col1, col2, col3, col4 = st.columns(4)
+    
+        col1.metric("Trend", trend)
+        col2.metric("Expected Return", f"{expected_return:.2f}%")
+        col3.metric("Target Price (30D)", f"{projected_price:,.0f}")
+        col4.metric("Confidence", f"{confidence:.1f}%")
+    
+        # Insight tambahan
+        if expected_return > 5:
+            insight = "Potensi bullish cukup kuat 📈"
+        elif expected_return < -5:
+            insight = "Potensi bearish dominan 📉"
+        else:
+            insight = "Sideways / konsolidasi ⚖️"
+    
+        st.info(f"""
+    📌 **Insight Otomatis:**
+    - Trend saat ini: **{trend}**
+    - Prediksi return: **{expected_return:.2f}% dalam 30 hari**
+    - Model: Linear regression + MA20 smoothing
+    - Volatilitas digunakan untuk estimasi confidence
+    
+    👉 Kesimpulan: **{insight}**
+    """)
+
+else:
+    st.warning("Data tidak cukup untuk prediksi (minimal 30 candle)")
 
     st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     st.warning("⚠️ Not financial advice. Gunakan sebagai referensi saja.")
