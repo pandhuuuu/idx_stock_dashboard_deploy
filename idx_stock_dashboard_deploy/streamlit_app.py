@@ -352,9 +352,9 @@ def plot_candlestick_with_signal(df, ticker, signal):
         decreasing_line_color='#ef5350',
     ), row=1, col=1)
         # MA
-        fig.add_trace(go.Scatter(x=df.index, y=df['MA10'], name='MA10',
+    fig.add_trace(go.Scatter(x=df.index, y=df['MA10'], name='MA10',
             line=dict(color='#2196F3', width=1.5)), row=1, col=1)
-        fig.add_trace(go.Scatter(x=df.index, y=df['MA30'], name='MA30',
+    fig.add_trace(go.Scatter(x=df.index, y=df['MA30'], name='MA30',
             line=dict(color='#FF9800', width=1.5)), row=1, col=1)
 
     # Trendline
