@@ -151,7 +151,7 @@ refresh_interval = st.sidebar.slider("Interval (detik)", 10, 300, 60)
 
 if auto_refresh:
     try:
-        st_autorefresh(interval=60 * 1000, key="auto_refresh")  # 60 detik
+        st_autorefresh(interval=refresh_interval * 1000, key="auto_refresh")
     except:
         st.warning("Module autorefresh belum terinstall")
 
