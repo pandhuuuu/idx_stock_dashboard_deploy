@@ -680,7 +680,7 @@ if st.session_state.scan_results is not None:
     👉 Kesimpulan: **{insight}**
     """)
 
-st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 else:
     st.warning("Data tidak cukup untuk prediksi (minimal 30 candle)")
