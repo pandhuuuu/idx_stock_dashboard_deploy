@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
@@ -99,6 +100,28 @@ def format_signal(val):
     else:
         return "⚪ NEUTRAL"
 
+# ─────────────────────────────
+# 🔮 FUTURE PREDICTION FUNCTION (FIX ERROR)
+# ─────────────────────────────
+def predict_future(df, days=30):
+    df = df.copy()
+
+    df = df[['Close']].dropna()
+    df['x'] = np.arange(len(df))
+
+    x = df['x'].values
+    y = df['Close'].values
+
+    slope, intercept = np.polyfit(x, y, 1)
+
+    last_x = x[-1]
+    future_x = np.arange(last_x + 1, last_x + days + 1)
+    future_y = slope * future_x + intercept
+
+    last_date = df.index[-1]
+    future_dates = pd.date_range(last_date, periods=days + 1, freq="D")[1:]
+
+    return future_dates, future_y
 
 # ─────────────────────────────
 # SIDEBAR
