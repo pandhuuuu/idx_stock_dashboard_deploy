@@ -545,9 +545,6 @@ if st.session_state.scan_results is not None:
     # ─────────────────────────────
     st.subheader("📈 Trend Analysis")
     
-    uptrend_df   = df_result[df_result["Trend"] == "UPTREND"].copy()
-    downtrend_df = df_result[df_result["Trend"] == "DOWNTREND"].copy()
-    
     col1, col2 = st.columns(2)
     
     with col1:
@@ -571,6 +568,9 @@ if st.session_state.scan_results is not None:
             )
         else:
             st.info("Tidak ada saham downtrend")
+
+    uptrend_df   = df_result[df_result["Trend"] == "UPTREND"].copy()
+    downtrend_df = df_result[df_result["Trend"] == "DOWNTREND"].copy()
 
     # Market Scanner
     st.subheader("📈 Market Scanner")
