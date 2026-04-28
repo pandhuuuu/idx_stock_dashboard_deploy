@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
@@ -680,7 +681,9 @@ if st.session_state.scan_results is not None:
     👉 Kesimpulan: **{insight}**
     """)
 
-        st.caption(f"Last update: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        now_wib = datetime.now(ZoneInfo("Asia/Jakarta"))
+
+        st.caption(f"Last update: {now_wib.strftime('%Y-%m-%d %H:%M:%S')} WIB")
 
 else:
     st.warning("Data tidak cukup untuk prediksi (minimal 30 candle)")
