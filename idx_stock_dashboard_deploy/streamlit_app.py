@@ -494,7 +494,7 @@ if st.session_state.scan_results is not None:
             st.dataframe(sdf, use_container_width=True)
 
     # Chart
-    st.subheader("📉 Chart")
+    st.subheader("📉 Real Chart")
 
     # Watchlist shortcut buttons
     if st.session_state.watchlist:
