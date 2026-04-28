@@ -540,37 +540,37 @@ if st.session_state.scan_results is not None:
     st.dataframe(sector_df, use_container_width=True)
 
 
-# ─────────────────────────────
-# 📈 TREND TABLES (NEW)
-# ─────────────────────────────
-st.subheader("📈 Trend Analysis")
-
-uptrend_df   = df_result[df_result["Trend"] == "UPTREND"].copy()
-downtrend_df = df_result[df_result["Trend"] == "DOWNTREND"].copy()
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.markdown("### 🟢 Uptrend Stocks")
-    if not uptrend_df.empty:
-        uptrend_df["Signal"] = uptrend_df["Signal"].apply(format_signal)
-        st.dataframe(
-            uptrend_df.sort_values(by="Confidence", ascending=False),
-            use_container_width=True
-        )
-    else:
-        st.info("Tidak ada saham uptrend")
-
-with col2:
-    st.markdown("### 🔴 Downtrend Stocks")
-    if not downtrend_df.empty:
-        downtrend_df["Signal"] = downtrend_df["Signal"].apply(format_signal)
-        st.dataframe(
-            downtrend_df.sort_values(by="Confidence", ascending=False),
-            use_container_width=True
-        )
-    else:
-        st.info("Tidak ada saham downtrend")
+    # ─────────────────────────────
+    # 📈 TREND TABLES (NEW)
+    # ─────────────────────────────
+    st.subheader("📈 Trend Analysis")
+    
+    uptrend_df   = df_result[df_result["Trend"] == "UPTREND"].copy()
+    downtrend_df = df_result[df_result["Trend"] == "DOWNTREND"].copy()
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("### 🟢 Uptrend Stocks")
+        if not uptrend_df.empty:
+            uptrend_df["Signal"] = uptrend_df["Signal"].apply(format_signal)
+            st.dataframe(
+                uptrend_df.sort_values(by="Confidence", ascending=False),
+                use_container_width=True
+            )
+        else:
+            st.info("Tidak ada saham uptrend")
+    
+    with col2:
+        st.markdown("### 🔴 Downtrend Stocks")
+        if not downtrend_df.empty:
+            downtrend_df["Signal"] = downtrend_df["Signal"].apply(format_signal)
+            st.dataframe(
+                downtrend_df.sort_values(by="Confidence", ascending=False),
+                use_container_width=True
+            )
+        else:
+            st.info("Tidak ada saham downtrend")
 
     # Market Scanner
     st.subheader("📈 Market Scanner")
