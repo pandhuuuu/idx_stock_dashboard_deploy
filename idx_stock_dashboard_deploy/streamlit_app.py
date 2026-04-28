@@ -5,6 +5,7 @@ from datetime import datetime
 from datetime import time
 from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
+from supabase import create_client
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
