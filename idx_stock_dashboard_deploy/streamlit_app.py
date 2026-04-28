@@ -371,24 +371,24 @@ if run_button or auto_refresh:
         if df is not None:
             sig = calculate_signals(df)
 
-                # ── SAFE GUARD ──
-                if sig is None:
-                    continue
-                
-                if not isinstance(sig, dict):
-                    continue
-                
-                required_keys = ["bull_score", "bear_score", "price", "rsi"]
-                if not all(k in sig for k in required_keys):
-                    continue
-                
-                # ── LOGIC ASLI KAMU (TIDAK DIUBAH) ──
-                if sig["bull_score"] > sig["bear_score"] + 1:
-                    signal = "BUY"
-                elif sig["bear_score"] > sig["bull_score"] + 1:
-                    signal = "SELL"
-                else:
-                    signal = "NEUTRAL"
+            # ── SAFE GUARD ──
+            if sig is None:
+                continue
+            
+            if not isinstance(sig, dict):
+                continue
+            
+            required_keys = ["bull_score", "bear_score", "price", "rsi"]
+            if not all(k in sig for k in required_keys):
+                continue
+            
+            # ── LOGIC ASLI KAMU (TIDAK DIUBAH) ──
+            if sig["bull_score"] > sig["bear_score"] + 1:
+                signal = "BUY"
+            elif sig["bear_score"] > sig["bull_score"] + 1:
+                signal = "SELL"
+            else:
+                signal = "NEUTRAL"
 
             results.append({
                 "Saham":       ticker,
