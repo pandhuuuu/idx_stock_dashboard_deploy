@@ -105,8 +105,8 @@ def format_signal(val):
 # =============================
 # TREND DETECTION (NEW)
 # =============================
-if "Trend" not in df_result.columns:
-    def detect_trend_safe(ticker):
+
+def detect_trend_safe(ticker):
         try:
             df = cached_fetch(add_jk(ticker), period, interval)
             if df is None or len(df) < 20:
