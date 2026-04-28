@@ -50,6 +50,7 @@ st.markdown("""
         font-weight: 600;
         padding: 8px 20px;
         width: 200%;
+        height: 90px;
     }
     .stButton > button:hover { opacity: 0.9; }
 
