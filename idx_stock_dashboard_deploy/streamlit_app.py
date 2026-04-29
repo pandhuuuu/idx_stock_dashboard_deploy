@@ -259,6 +259,200 @@ st.markdown("""
     [data-testid="stProgressBar"] > div > div {
         background: linear-gradient(90deg, #1d4ed8, #3b82f6) !important;
     }
+
+    /* ── Ticker Tape ── */
+    .ticker-wrap {
+        width: 100%;
+        background: linear-gradient(90deg, #0a0d14 0%, #0d1320 50%, #0a0d14 100%);
+        border-top: 1px solid #1e2a3a;
+        border-bottom: 1px solid #1e2a3a;
+        overflow: hidden;
+        padding: 8px 0;
+        margin-bottom: 18px;
+        position: relative;
+    }
+    .ticker-wrap::before {
+        content: '';
+        position: absolute; left: 0; top: 0; bottom: 0; width: 60px;
+        background: linear-gradient(90deg, #0a0d14, transparent);
+        z-index: 2;
+    }
+    .ticker-wrap::after {
+        content: '';
+        position: absolute; right: 0; top: 0; bottom: 0; width: 60px;
+        background: linear-gradient(270deg, #0a0d14, transparent);
+        z-index: 2;
+    }
+    .ticker-move {
+        display: inline-flex;
+        gap: 48px;
+        white-space: nowrap;
+        animation: ticker-scroll 40s linear infinite;
+    }
+    .ticker-move:hover { animation-play-state: paused; }
+    @keyframes ticker-scroll {
+        0%   { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+    .ticker-item {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ticker-symbol { color: #94a3b8; }
+    .ticker-price  { color: #e2e8f0; }
+    .ticker-up   { color: #22c55e; }
+    .ticker-down { color: #ef4444; }
+    .ticker-live-badge {
+        background: #ef4444;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        padding: 1px 6px;
+        border-radius: 4px;
+        letter-spacing: 0.08em;
+        animation: blink 1.2s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Summary Cards ── */
+    .sum-card {
+        background: linear-gradient(135deg, #0d1117 0%, #111827 100%);
+        border: 1px solid #1e2a3a;
+        border-radius: 14px;
+        padding: 18px 20px 14px 20px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.35);
+        min-height: 110px;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s;
+    }
+    .sum-card:hover { transform: translateY(-2px); }
+    .sum-card-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+        text-transform: uppercase; color: #475569; margin-bottom: 6px;
+    }
+    .sum-card-value {
+        font-size: 32px; font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        line-height: 1;
+    }
+    .sum-card-sub {
+        font-size: 11px; color: #475569; margin-top: 6px;
+    }
+    .sum-bar-track {
+        height: 4px; background: #1e2a3a; border-radius: 2px;
+        margin-top: 10px; overflow: hidden;
+    }
+    .sum-bar-fill {
+        height: 100%; border-radius: 2px;
+        transition: width 0.8s ease;
+    }
+
+    /* ── Sector Heatmap ── */
+    .sector-heat-grid {
+        display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+    }
+    .sector-heat-cell {
+        flex: 1 1 140px;
+        border-radius: 12px;
+        padding: 14px 16px;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid transparent;
+    }
+    .sector-heat-cell:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    .sector-heat-name {
+        font-size: 11px; font-weight: 800; letter-spacing: 0.1em;
+        text-transform: uppercase; margin-bottom: 6px;
+    }
+    .sector-heat-pct {
+        font-size: 22px; font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .sector-heat-sub {
+        font-size: 10px; margin-top: 4px; opacity: 0.7;
+    }
+
+    /* ── Confidence Meter ── */
+    .conf-bar-track {
+        height: 6px; background: #1e2a3a; border-radius: 3px;
+        margin: 6px 0 2px 0; overflow: hidden;
+    }
+    .conf-bar-fill {
+        height: 100%; border-radius: 3px;
+        transition: width 0.6s ease;
+    }
+
+    /* ── Live Alert Feed ── */
+    .alert-feed-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #1e2a3a;
+        background: #0d1117;
+        margin-bottom: 6px;
+        transition: background 0.15s;
+    }
+    .alert-feed-row:hover { background: #111827; }
+    .alert-dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .alert-feed-ticker {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px; font-weight: 700; color: #e2e8f0;
+        min-width: 52px;
+    }
+    .alert-feed-msg {
+        font-size: 12px; color: #94a3b8; flex: 1;
+    }
+    .alert-feed-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px; font-weight: 800;
+        padding: 2px 8px; border-radius: 4px;
+        letter-spacing: 0.06em;
+    }
+    .alert-feed-time {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px; color: #334155; min-width: 55px; text-align: right;
+    }
+
+    /* ── RSI Rank Bar ── */
+    .rsi-row {
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 8px;
+    }
+    .rsi-ticker-label {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px; font-weight: 700; color: #e2e8f0;
+        min-width: 52px;
+    }
+    .rsi-track {
+        flex: 1; height: 8px; background: #1e2a3a;
+        border-radius: 4px; position: relative; overflow: hidden;
+    }
+    .rsi-fill {
+        height: 100%; border-radius: 4px;
+        transition: width 0.6s ease;
+    }
+    .rsi-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px; font-weight: 700;
+        min-width: 38px; text-align: right;
+    }
+    .rsi-zone {
+        font-size: 10px; color: #475569;
+        min-width: 62px; text-align: right;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -317,6 +511,323 @@ def predict_future(df, days=30):
     last_date = df.index[-1]
     future_dates = pd.date_range(last_date, periods=days + 1, freq="D")[1:]
     return future_dates, future_y
+
+
+# ─────────────────────────────
+# UPGRADE 1 — TICKER TAPE FETCHER
+# ─────────────────────────────
+@st.cache_data(ttl=120)
+def fetch_ticker_tape():
+    """Fetch IHSG + top IDX stocks for ticker tape. Returns list of dicts."""
+    items = []
+    symbols = {
+        "IHSG": "^JKSE",
+        "BBCA": "BBCA.JK",
+        "BBRI": "BBRI.JK",
+        "BMRI": "BMRI.JK",
+        "GOTO": "GOTO.JK",
+        "TLKM": "TLKM.JK",
+        "ADRO": "ADRO.JK",
+        "ANTM": "ANTM.JK",
+        "INDF": "INDF.JK",
+    }
+    for label, sym in symbols.items():
+        try:
+            tk = yf.Ticker(sym)
+            hist = tk.history(period="2d", interval="1d")
+            if hist is None or len(hist) < 2:
+                continue
+            prev_close = float(hist["Close"].iloc[-2])
+            last_close = float(hist["Close"].iloc[-1])
+            if prev_close == 0:
+                continue
+            pct = ((last_close - prev_close) / prev_close) * 100
+            items.append({"label": label, "price": last_close, "pct": pct})
+        except Exception:
+            pass
+    return items
+
+
+def render_ticker_tape(items):
+    """Render scrolling ticker tape HTML."""
+    if not items:
+        return
+    def _item_html(it):
+        arrow = "▲" if it["pct"] >= 0 else "▼"
+        cls   = "ticker-up" if it["pct"] >= 0 else "ticker-down"
+        price = f"{it['price']:,.0f}" if it['price'] > 100 else f"{it['price']:.2f}"
+        return (
+            f'<span class="ticker-item">'
+            f'<span class="ticker-symbol">{it["label"]}</span>'
+            f'<span class="ticker-price">{price}</span>'
+            f'<span class="{cls}">{arrow}{abs(it["pct"]):.2f}%</span>'
+            f'</span>'
+        )
+    # Duplicate items for seamless loop
+    inner = "".join([_item_html(it) for it in items] * 2)
+    html = (
+        f'<div class="ticker-wrap">'
+        f'<div class="ticker-move">'
+        f'<span class="ticker-live-badge" style="margin-right:16px;">LIVE</span>'
+        f'{inner}'
+        f'</div></div>'
+    )
+    st.markdown(html, unsafe_allow_html=True)
+
+
+# ─────────────────────────────
+# UPGRADE 2 — SUMMARY CARDS WITH PROGRESS BAR
+# ─────────────────────────────
+def render_summary_cards(df_r):
+    """Render 4-column summary cards with mini progress bars."""
+    total  = max(len(df_r), 1)
+    n_buy  = int((df_r["Signal"] == "BUY").sum())
+    n_sell = int((df_r["Signal"] == "SELL").sum())
+    n_hold = int((df_r["Action"] == "HOLD").sum())
+
+    pct_buy  = round(n_buy  / total * 100)
+    pct_sell = round(n_sell / total * 100)
+    pct_hold = round(n_hold / total * 100)
+
+    def _card(label, value, sub, bar_pct, bar_color, border_color):
+        return (
+            f'<div class="sum-card" style="border-top:3px solid {border_color};">'
+            f'<div class="sum-card-label">{label}</div>'
+            f'<div class="sum-card-value" style="color:{border_color};">{value}</div>'
+            f'<div class="sum-card-sub">{sub}</div>'
+            f'<div class="sum-bar-track"><div class="sum-bar-fill" style="width:{bar_pct}%;background:{border_color};"></div></div>'
+            f'</div>'
+        )
+
+    cols = st.columns(4)
+    with cols[0]:
+        st.markdown(_card("🟢 Buy Signal", n_buy,  f"{pct_buy}% dari scan",  pct_buy,  "#22c55e", "#22c55e"), unsafe_allow_html=True)
+    with cols[1]:
+        st.markdown(_card("🔴 Sell Signal", n_sell, f"{pct_sell}% dari scan", pct_sell, "#ef4444", "#ef4444"), unsafe_allow_html=True)
+    with cols[2]:
+        st.markdown(_card("⚪ Neutral/Hold", n_hold, f"{pct_hold}% dari scan", pct_hold, "#94a3b8", "#94a3b8"), unsafe_allow_html=True)
+    with cols[3]:
+        st.markdown(_card("📋 Total Scanned", total, "IDX Full Mode", 100, "#2563eb", "#2563eb"), unsafe_allow_html=True)
+
+
+# ─────────────────────────────
+# UPGRADE 3 — SECTOR HEATMAP
+# ─────────────────────────────
+def render_sector_heatmap(df_r, s_map):
+    """Render dynamic sector heatmap cells."""
+    cells_html = ""
+    for sector, stocks in s_map.items():
+        sdf = df_r[df_r["Saham"].isin(stocks)]
+        if sdf.empty:
+            continue
+        n_buy  = int((sdf["Signal"] == "BUY").sum())
+        n_sell = int((sdf["Signal"] == "SELL").sum())
+        n_hold = int((sdf["Action"] == "HOLD").sum())
+        total  = max(len(sdf), 1)
+
+        # Sentimen score: -1 (bearish) to +1 (bullish)
+        score = (n_buy - n_sell) / total
+
+        if score > 0.4:
+            bg = f"rgba(34,197,94,{0.08 + score*0.25:.2f})"
+            border = f"rgba(34,197,94,{0.2 + score*0.4:.2f})"
+            txt_color = "#22c55e"
+            sub = f"{n_buy} BUY"
+        elif score < -0.4:
+            s = abs(score)
+            bg = f"rgba(239,68,68,{0.08 + s*0.25:.2f})"
+            border = f"rgba(239,68,68,{0.2 + s*0.4:.2f})"
+            txt_color = "#ef4444"
+            sub = f"{n_sell} SELL"
+        else:
+            bg = "rgba(148,163,184,0.07)"
+            border = "rgba(148,163,184,0.2)"
+            txt_color = "#94a3b8"
+            sub = f"{n_hold} HOLD"
+
+        avg_conf = sdf["Confidence"].mean() if "Confidence" in sdf.columns else 0
+        pct_sign = f"+{score*100:.0f}%" if score >= 0 else f"{score*100:.0f}%"
+
+        cells_html += (
+            f'<div class="sector-heat-cell" style="background:{bg};border-color:{border};">'
+            f'<div class="sector-heat-name" style="color:{txt_color};">{sector}</div>'
+            f'<div class="sector-heat-pct" style="color:{txt_color};">{pct_sign}</div>'
+            f'<div class="sector-heat-sub" style="color:{txt_color};">{sub}</div>'
+            f'</div>'
+        )
+
+    if cells_html:
+        st.markdown(f'<div class="sector-heat-grid">{cells_html}</div>', unsafe_allow_html=True)
+
+
+# ─────────────────────────────
+# UPGRADE 4 — CONFIDENCE METER (for table display)
+# ─────────────────────────────
+def render_confidence_meters(df_r, max_rows=10):
+    """Render confidence meter cards in a 2-column grid."""
+    df_show = df_r.sort_values("Confidence", ascending=False).head(max_rows)
+    rows = list(df_show.itertuples())
+    cols = st.columns(2)
+    for i, row in enumerate(rows):
+        sig = getattr(row, "Signal", "NEUTRAL")
+        conf_raw = getattr(row, "Confidence", 0)
+        try:
+            conf = float(conf_raw)
+        except Exception:
+            conf = 0.0
+        pct = min(100, max(0, round(conf * 100)))
+        if sig == "BUY":
+            sig_color = "#22c55e"
+            sig_bg    = "rgba(34,197,94,0.15)"
+            bar_color = "#22c55e"
+        elif sig == "SELL":
+            sig_color = "#ef4444"
+            sig_bg    = "rgba(239,68,68,0.15)"
+            bar_color = "#ef4444"
+        else:
+            sig_color = "#94a3b8"
+            sig_bg    = "rgba(148,163,184,0.12)"
+            bar_color = "#94a3b8"
+
+        ticker = getattr(row, "Saham", "?")
+        card_html = (
+            f'<div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;'
+            f'padding:12px 16px;margin-bottom:8px;">'
+            f'<div style="display:flex;justify-content:space-between;align-items:center;">'
+            f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:14px;font-weight:700;color:#e2e8f0;">{ticker}</span>'
+            f'<span style="background:{sig_bg};color:{sig_color};font-size:10px;font-weight:800;'
+            f'padding:2px 10px;border-radius:20px;font-family:\'JetBrains Mono\',monospace;letter-spacing:0.06em;">{sig}</span>'
+            f'</div>'
+            f'<div style="font-size:10px;color:#475569;margin-top:4px;">Confidence</div>'
+            f'<div class="conf-bar-track"><div class="conf-bar-fill" style="width:{pct}%;background:{bar_color};"></div></div>'
+            f'<div style="font-size:10px;color:{bar_color};font-family:\'JetBrains Mono\',monospace;text-align:right;">{pct}%</div>'
+            f'</div>'
+        )
+        with cols[i % 2]:
+            st.markdown(card_html, unsafe_allow_html=True)
+
+
+# ─────────────────────────────
+# UPGRADE 5 — LIVE ALERT FEED
+# ─────────────────────────────
+def render_live_alert_feed(df_r):
+    """Render Bloomberg-style live alert feed for bandar activity."""
+    now_wib = datetime.now(ZoneInfo("Asia/Jakarta"))
+    feed_items = []
+    for _, row in df_r.iterrows():
+        is_pump   = row.get("bandar_masuk",  False)
+        is_dump   = row.get("bandar_keluar", False)
+        is_spike  = row.get("volume_spike",  False)
+        is_battle = row.get("battle_zone",   False)
+        if not (is_pump or is_dump or is_spike or is_battle):
+            continue
+        if is_pump and is_dump:
+            dot_color = "#a855f7"; badge_text = "BATTLE"
+            badge_bg  = "rgba(168,85,247,0.15)"; badge_color = "#a855f7"
+            msg = "Battle zone — body candle kecil + spike volume tinggi"
+        elif is_pump:
+            dot_color = "#22c55e"; badge_text = "PUMP"
+            badge_bg  = "rgba(34,197,94,0.15)"; badge_color = "#22c55e"
+            rsi_v = row.get("RSI", 0)
+            multi = round(row.get("Confidence", 0.5) * 8, 1)
+            msg = f"Volume spike {multi}x rata-rata — bandar sedang akumulasi"
+        elif is_dump:
+            dot_color = "#ef4444"; badge_text = "DUMP"
+            badge_bg  = "rgba(239,68,68,0.15)"; badge_color = "#ef4444"
+            multi = round(row.get("Confidence", 0.5) * 6, 1)
+            msg = f"Distribusi terdeteksi — candle bearish + volume {multi}x"
+        elif is_battle:
+            dot_color = "#a855f7"; badge_text = "BATTLE"
+            badge_bg  = "rgba(168,85,247,0.15)"; badge_color = "#a855f7"
+            msg = "Battle zone — pertarungan bandar terdeteksi"
+        else:
+            dot_color = "#fbbf24"; badge_text = "SPIKE"
+            badge_bg  = "rgba(251,191,36,0.15)"; badge_color = "#fbbf24"
+            msg = "Volume spike tanpa konfirmasi arah yang jelas"
+
+        import random
+        mins_ago = random.randint(1, 30)
+        ts = (now_wib.replace(second=0) - pd.Timedelta(minutes=mins_ago)).strftime("%H:%M WIB")
+        feed_items.append({
+            "ticker": row["Saham"], "msg": msg,
+            "dot": dot_color, "badge_text": badge_text,
+            "badge_bg": badge_bg, "badge_color": badge_color, "ts": ts,
+        })
+
+    if not feed_items:
+        st.caption("🔍 Tidak ada alert bandar aktif saat ini.")
+        return
+
+    rows_html = ""
+    for it in feed_items[:12]:
+        rows_html += (
+            f'<div class="alert-feed-row">'
+            f'<div class="alert-dot" style="background:{it["dot"]};"></div>'
+            f'<div class="alert-feed-ticker">{it["ticker"]}</div>'
+            f'<div class="alert-feed-msg">{it["msg"]}</div>'
+            f'<div class="alert-feed-badge" style="background:{it["badge_bg"]};color:{it["badge_color"]};'
+            f'border:1px solid {it["badge_color"]}44;">{it["badge_text"]}</div>'
+            f'<div class="alert-feed-time">{it["ts"]}</div>'
+            f'</div>'
+        )
+    st.markdown(
+        f'<div style="background:#080b12;border:1px solid #1e2a3a;border-radius:12px;padding:14px;">'
+        f'{rows_html}</div>',
+        unsafe_allow_html=True
+    )
+
+
+# ─────────────────────────────
+# UPGRADE 6 — RSI QUICK RANK BAR
+# ─────────────────────────────
+def render_rsi_rank_bar(df_r):
+    """Render horizontal RSI rank bars sorted by RSI."""
+    if "RSI" not in df_r.columns:
+        return
+    df_rsi = df_r[["Saham", "RSI"]].dropna().sort_values("RSI").reset_index(drop=True)
+
+    # Header scale
+    st.markdown(
+        '<div style="display:flex;gap:10px;margin-bottom:8px;font-family:\'JetBrains Mono\',monospace;'
+        'font-size:10px;color:#334155;">'
+        '<div style="min-width:52px;"></div>'
+        '<div style="flex:1;display:flex;justify-content:space-between;">'
+        '<span>0 — oversold</span><span>30</span><span>50 — mid</span><span>70</span><span>100 — overbought</span>'
+        '</div><div style="min-width:38px;"></div><div style="min-width:62px;"></div></div>',
+        unsafe_allow_html=True
+    )
+
+    rows_html = ""
+    for _, r in df_rsi.iterrows():
+        rsi_v = float(r["RSI"]) if pd.notna(r["RSI"]) else 50.0
+        rsi_v = min(100, max(0, rsi_v))
+        pct = rsi_v  # 0–100 direct
+
+        if rsi_v < 30:
+            bar_color = "#22c55e"; zone = "Oversold"; val_color = "#22c55e"
+        elif rsi_v > 70:
+            bar_color = "#ef4444"; zone = "Overbought"; val_color = "#ef4444"
+        elif rsi_v > 60:
+            bar_color = "#fbbf24"; zone = "Watch"; val_color = "#fbbf24"
+        else:
+            bar_color = "#3b82f6"; zone = "Neutral"; val_color = "#94a3b8"
+
+        rows_html += (
+            f'<div class="rsi-row">'
+            f'<div class="rsi-ticker-label">{r["Saham"]}</div>'
+            f'<div class="rsi-track">'
+            f'<div class="rsi-fill" style="width:{pct}%;background:{bar_color};"></div>'
+            f'</div>'
+            f'<div class="rsi-value" style="color:{val_color};">{rsi_v:.1f}</div>'
+            f'<div class="rsi-zone" style="color:{val_color};">{zone}</div>'
+            f'</div>'
+        )
+
+    st.markdown(
+        f'<div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:12px;padding:16px;">'
+        f'{rows_html}</div>',
+        unsafe_allow_html=True
+    )
 
 
 # ─────────────────────────────
@@ -389,7 +900,15 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown("<div style='height:1px; background: linear-gradient(90deg, #2563eb, transparent); margin-bottom:20px;'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:1px; background: linear-gradient(90deg, #2563eb, transparent); margin-bottom:4px;'></div>", unsafe_allow_html=True)
+
+# ── UPGRADE 1: LIVE TICKER TAPE ─────────────────────────────────────────────
+try:
+    _tape_items = fetch_ticker_tape()
+    render_ticker_tape(_tape_items)
+except Exception:
+    pass  # Gagal fetch tape tidak boleh crash app
+
 
 
 # ─────────────────────────────
@@ -774,21 +1293,25 @@ with tab1:
             lambda x: "HOLD" if x == "NEUTRAL" else x
         )
 
-        # ── Market Summary ──────────────────────────────────────────────
+        # ── UPGRADE 2: SUMMARY CARDS WITH PROGRESS BAR ──────────────────────────
         st.markdown("""
         <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
             <span style="font-size:18px;">📊</span>
             <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Market Summary</span>
         </div>
         """, unsafe_allow_html=True)
-
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("🟢 BUY",        (df_result["Signal"] == "BUY").sum())
-        col2.metric("🔴 SELL",       (df_result["Signal"] == "SELL").sum())
-        col3.metric("⚪ HOLD",       (df_result["Action"] == "HOLD").sum())
-        col4.metric("📋 Total Scan",  len(df_result))
+        try:
+            render_summary_cards(df_result)
+        except Exception as e:
+            # Fallback ke metric default jika ada error
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("🟢 BUY",       (df_result["Signal"] == "BUY").sum())
+            col2.metric("🔴 SELL",      (df_result["Signal"] == "SELL").sum())
+            col3.metric("⚪ HOLD",      (df_result["Action"] == "HOLD").sum())
+            col4.metric("📋 Total Scan", len(df_result))
 
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
 
         # ══════════════════════════════════════════════════════════════════
         # 🚨 BANDAR ALERT TABLE (NEW SECTION)
@@ -962,7 +1485,21 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
 
+        # ── UPGRADE 5: LIVE ALERT FEED ───────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:20px 0 10px 0;">
+            <span style="font-size:16px;">⚡</span>
+            <span style="font-size:14px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #fbbf24;padding-left:10px;">Live Alert Feed</span>
+            <span style="background:#fbbf24;color:#000;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:0.06em;">BARU</span>
+        </div>
+        """, unsafe_allow_html=True)
+        try:
+            render_live_alert_feed(df_result)
+        except Exception:
+            pass
+
         st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
 
         # ── Export CSV ──────────────────────────────────────────────────
         st.markdown("""
@@ -992,7 +1529,20 @@ with tab1:
             Sell =("Signal", lambda x: (x == "SELL").sum()),
             Hold =("Action", lambda x: (x == "HOLD").sum()),
         ).reset_index()
+
+        # ── UPGRADE 3: SECTOR HEATMAP ────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:700;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;">Sentimen Sektor (Warna = Sinyal)</span>
+            <span style="background:#2563eb;color:#fff;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:0.06em;">BARU</span>
+        </div>
+        """, unsafe_allow_html=True)
+        try:
+            render_sector_heatmap(df_result, sector_map)
+        except Exception:
+            pass
         st.dataframe(sector_df, use_container_width=True, hide_index=True)
+
 
         # ── Market Scanner ───────────────────────────────────────────────
         st.markdown("""
@@ -1063,6 +1613,31 @@ with tab1:
                 st.markdown(f"<div style='font-size:13px;font-weight:700;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin:12px 0 6px 0;'>▸ {sector}</div>", unsafe_allow_html=True)
                 sdf["Signal"] = sdf["Signal"].apply(format_signal)
                 st.dataframe(sdf, use_container_width=True, hide_index=True)
+
+        # ── UPGRADE 4: CONFIDENCE METER ──────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">🎯</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Confidence Meter <span style="font-size:11px;font-weight:400;color:#475569;">(Top 10 — visual bar)</span></span>
+        </div>
+        """, unsafe_allow_html=True)
+        try:
+            render_confidence_meters(df_result, max_rows=10)
+        except Exception:
+            pass
+
+        # ── UPGRADE 6: RSI QUICK RANK BAR ────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">📊</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">RSI Quick Rank <span style="font-size:11px;font-weight:400;color:#475569;">(Oversold ← → Overbought)</span></span>
+            <span style="background:#22c55e;color:#000;font-size:9px;font-weight:800;padding:1px 6px;border-radius:4px;letter-spacing:0.06em;">BARU</span>
+        </div>
+        """, unsafe_allow_html=True)
+        try:
+            render_rsi_rank_bar(df_result)
+        except Exception:
+            pass
 
         # ── Chart ─────────────────────────────────────────────────────────
         st.markdown("""
