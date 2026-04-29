@@ -77,7 +77,7 @@ def _ticker_color(val):
 ticker_html = ""
 
 # IHSG
-if ihsg_last:
+if ihsg_last is not None and not pd.isna(ihsg_last):
     ticker_html += f"""
     <span style="margin-right:40px;">
         <b>IDX</b> {ihsg_last:,.0f}
@@ -88,7 +88,7 @@ if ihsg_last:
     """
 
 # Movers
-for m in movers:
+if movers:
     ticker_html += f"""
     <span style="margin-right:30px;">
         {m['symbol']} {m['price']:,.0f}
