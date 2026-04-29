@@ -90,29 +90,29 @@ if isinstance(ihsg_last, (int, float)):
 # Movers
 if movers:
     for m in movers:
-    symbol = m.get("symbol", "-")
-    price  = m.get("price")
-    change = m.get("change")
-
-    # SAFE casting
-    try:
-        price = float(price)
-    except:
-        price = 0
-
-    try:
-        change = float(change)
-    except:
-        change = 0
-
-    ticker_html += f"""
-    <span style="margin-right:30px;">
-        {symbol} {price:,.0f}
-        <span style="color:{_ticker_color(change)};">
-            {change:+.2f}%
+        symbol = m.get("symbol", "-")
+        price  = m.get("price")
+        change = m.get("change")
+    
+        # SAFE casting
+        try:
+            price = float(price)
+        except:
+            price = 0
+    
+        try:
+            change = float(change)
+        except:
+            change = 0
+    
+        ticker_html += f"""
+        <span style="margin-right:30px;">
+            {symbol} {price:,.0f}
+            <span style="color:{_ticker_color(change)};">
+                {change:+.2f}%
+            </span>
         </span>
-    </span>
-    """
+        """
         
 print(ticker_html)
 st.write(ticker_html)
