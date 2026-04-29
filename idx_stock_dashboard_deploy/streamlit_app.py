@@ -77,7 +77,7 @@ def _ticker_color(val):
 ticker_html = ""
 
 # IHSG
-if ihsg_last is not None and not pd.isna(ihsg_last):
+if isinstance(ihsg_last, (int, float)):
     ticker_html += f"""
     <span style="margin-right:40px;">
         <b>IDX</b> {ihsg_last:,.0f}
