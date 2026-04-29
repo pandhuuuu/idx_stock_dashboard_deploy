@@ -22,47 +22,242 @@ from idx_stock_monitor import (
 st.set_page_config(page_title="IDX Stock Dashboard", layout="wide", page_icon="📊")
 
 # ─────────────────────────────
-# CUSTOM CSS (dark card style)
+# CUSTOM CSS — PROFESSIONAL TRADING TERMINAL
 # ─────────────────────────────
 st.markdown("""
 <style>
-    .stApp { background-color: #0e1117; }
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
+    /* ── Global ── */
+    .stApp {
+        background-color: #080b12;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    html, body, [class*="css"] {
+        font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* ── Metrics ── */
     [data-testid="metric-container"] {
-        background: #1a1d27;
-        border: 1px solid #2a2d3e;
-        border-radius: 10px;
-        padding: 16px;
-    }
-    [data-testid="metric-container"] label { color: #8b8fa8 !important; font-size: 13px; }
-    [data-testid="metric-container"] [data-testid="stMetricValue"] {
-        font-size: 28px !important;
-        font-weight: 700;
-    }
-
-    h2, h3 { border-left: 3px solid #4f8ef7; padding-left: 10px; }
-
-    [data-testid="stSidebar"] { background-color: #13151f; }
-
-    .stButton > button {
-        background: linear-gradient(135deg, #4f8ef7, #3a6fd8);
-        color: white;
-        border: none;
+        background: linear-gradient(135deg, #0d1117 0%, #161b27 100%);
+        border: 1px solid #1e2a3a;
+        border-top: 2px solid #2563eb;
         border-radius: 12px;
-        font-weight: 1100;
-        padding: 8px 20px;
-        width: 100%;
-        height: 90px;
+        padding: 18px 20px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+        transition: border-top-color 0.2s ease;
     }
-    .stButton > button:hover { opacity: 0.9; }
+    [data-testid="metric-container"]:hover {
+        border-top-color: #3b82f6;
+    }
+    [data-testid="metric-container"] label {
+        color: #64748b !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+    }
+    [data-testid="metric-container"] [data-testid="stMetricValue"] {
+        font-size: 26px !important;
+        font-weight: 700 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        color: #e2e8f0 !important;
+    }
+    [data-testid="stMetricDelta"] {
+        font-size: 12px !important;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    /* ── Section Headers ── */
+    h1 { font-family: 'Space Grotesk', sans-serif !important; color: #f1f5f9 !important; }
+    h2 {
+        font-family: 'Space Grotesk', sans-serif !important;
+        color: #e2e8f0 !important;
+        border-left: 3px solid #2563eb !important;
+        padding-left: 12px !important;
+        margin-top: 28px !important;
+        font-size: 18px !important;
+        letter-spacing: -0.01em;
+    }
+    h3 {
+        font-family: 'Space Grotesk', sans-serif !important;
+        color: #cbd5e1 !important;
+        border-left: 3px solid #334155 !important;
+        padding-left: 10px !important;
+        font-size: 15px !important;
+    }
+
+    /* ── Sidebar ── */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0a0d14 0%, #0d1117 100%);
+        border-right: 1px solid #1e2a3a;
+    }
+    [data-testid="stSidebar"] .stMarkdown p { color: #94a3b8; font-size: 13px; }
+    [data-testid="stSidebar"] h1 { color: #e2e8f0 !important; font-size: 16px !important; }
+
+    /* ── Buttons ── */
+    .stButton > button {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
+        color: #ffffff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.03em;
+        padding: 10px 20px;
+        width: 100%;
+        height: 80px;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        transition: all 0.2s ease;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    .stButton > button:hover {
+        background: linear-gradient(135deg, #2563eb, #3b82f6);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        transform: translateY(-1px);
+    }
 
     .stDownloadButton > button {
-        background: #1a2a1a;
-        color: #4caf50;
-        border: 1px solid #4caf50;
+        background: #071a0e;
+        color: #22c55e;
+        border: 1px solid #166534;
         border-radius: 8px;
         font-weight: 600;
+        font-size: 12px;
         width: 100%;
+        transition: all 0.2s;
+    }
+    .stDownloadButton > button:hover {
+        background: #0f2e1a;
+        border-color: #22c55e;
+    }
+
+    /* ── Tabs ── */
+    [data-testid="stTabs"] [data-baseweb="tab-list"] {
+        background: #0d1117;
+        border-bottom: 1px solid #1e2a3a;
+        gap: 4px;
+        padding: 0 4px;
+    }
+    [data-testid="stTabs"] [data-baseweb="tab"] {
+        background: transparent;
+        color: #64748b;
+        font-weight: 600;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        border-radius: 6px 6px 0 0;
+        padding: 10px 20px;
+        transition: all 0.2s;
+        font-family: 'Space Grotesk', sans-serif;
+    }
+    [data-testid="stTabs"] [aria-selected="true"] {
+        background: #0f1f3d !important;
+        color: #3b82f6 !important;
+        border-bottom: 2px solid #2563eb !important;
+    }
+
+    /* ── DataFrames ── */
+    [data-testid="stDataFrame"] {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #1e2a3a;
+    }
+    [data-testid="stDataFrame"] th {
+        background: #0d1117 !important;
+        color: #64748b !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.06em !important;
+        text-transform: uppercase !important;
+        padding: 10px 12px !important;
+    }
+    [data-testid="stDataFrame"] td {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 12px !important;
+        color: #cbd5e1 !important;
+        padding: 8px 12px !important;
+    }
+
+    /* ── Select / Inputs ── */
+    [data-testid="stSelectbox"] > div,
+    [data-testid="stTextArea"] > div {
+        background: #0d1117 !important;
+        border-color: #1e2a3a !important;
+        border-radius: 8px !important;
+        font-family: 'Space Grotesk', sans-serif;
+        color: #e2e8f0 !important;
+    }
+
+    /* ── Alerts ── */
+    [data-testid="stInfo"] {
+        background: #0c1929;
+        border-color: #1d4ed8;
+        border-radius: 10px;
+        color: #93c5fd;
+    }
+    [data-testid="stWarning"] {
+        background: #1c1100;
+        border-color: #92400e;
+        border-radius: 10px;
+    }
+
+    /* ── Divider / Card Wrappers ── */
+    .section-card {
+        background: linear-gradient(135deg, #0d1117 0%, #111827 100%);
+        border: 1px solid #1e2a3a;
+        border-radius: 14px;
+        padding: 20px 24px;
+        margin-bottom: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    .status-card {
+        background: linear-gradient(135deg, #0d1117, #111827);
+        border: 1px solid #1e2a3a;
+        border-radius: 12px;
+        padding: 14px 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    /* ── Alert Badge ── */
+    .alert-badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-pump {
+        background: rgba(34,197,94,0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34,197,94,0.3);
+    }
+    .badge-dump {
+        background: rgba(239,68,68,0.15);
+        color: #ef4444;
+        border: 1px solid rgba(239,68,68,0.3);
+    }
+    .badge-battle {
+        background: rgba(168,85,247,0.15);
+        color: #a855f7;
+        border: 1px solid rgba(168,85,247,0.3);
+    }
+    .badge-spike {
+        background: rgba(251,191,36,0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(251,191,36,0.3);
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #1e2a3a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #2563eb; }
+
+    /* ── Progress bar ── */
+    [data-testid="stProgressBar"] > div > div {
+        background: linear-gradient(90deg, #1d4ed8, #3b82f6) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -178,17 +373,33 @@ else:
 # ─────────────────────────────
 # HEADER
 # ─────────────────────────────
-st.title("🤔")
-st.title("CACING-CACING 🪱  NAGA-NAGA𓆩 🐉 🔥🔥🔥")
+st.markdown("""
+<div style="padding: 24px 0 8px 0;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
+        <span style="font-size:32px;">📊</span>
+        <div>
+            <div style="font-size:26px; font-weight:800; color:#e2e8f0; letter-spacing:-0.02em; font-family:'Space Grotesk',sans-serif;">
+                IDX Stock Dashboard
+            </div>
+            <div style="font-size:12px; color:#475569; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">
+                CACING-CACING 🪱 &nbsp;|&nbsp; NAGA-NAGA 𓆩🐉 &nbsp;|&nbsp; REAL-TIME MARKET SCANNER
+            </div>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("<div style='height:1px; background: linear-gradient(90deg, #2563eb, transparent); margin-bottom:20px;'></div>", unsafe_allow_html=True)
+
 
 # ─────────────────────────────
 # TABS — INTEGRASI UTAMA
 # ─────────────────────────────
-tab1, tab2 = st.tabs(["📊 Market Scanner", "💼 Portofolio Saya"])
+tab1, tab2 = st.tabs(["📊  Market Scanner", "💼  Portofolio Saya"])
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# TAB 1 — MARKET SCANNER (semua kode lama masuk ke sini)
+# TAB 1 — MARKET SCANNER
 # ═══════════════════════════════════════════════════════════════════════════
 with tab1:
 
@@ -205,37 +416,52 @@ with tab1:
 
     if current_time < open_1:
         status = "⏳ PRE-MARKET"
-        color = "#9E9E9E"
+        color = "#94a3b8"
+        status_bg = "#0f172a"
     elif open_1 <= current_time < break_1:
-        status = "🟢 OPEN (Sesi 1)"
-        color = "#00C853"
+        status = "🟢 OPEN — Sesi 1"
+        color = "#22c55e"
+        status_bg = "#052e16"
     elif break_1 <= current_time < open_2:
-        status = "🟡 BREAK"
-        color = "#FFD600"
+        status = "🟡 ISTIRAHAT"
+        color = "#fbbf24"
+        status_bg = "#1c1a00"
     elif open_2 <= current_time < close:
-        status = "🟢 OPEN (Sesi 2)"
-        color = "#00C853"
+        status = "🟢 OPEN — Sesi 2"
+        color = "#22c55e"
+        status_bg = "#052e16"
     else:
         status = "🔴 CLOSED"
-        color = "#FF5252"
+        color = "#ef4444"
+        status_bg = "#1c0a0a"
 
-    col1, col2 = st.columns([3, 1])
+    col1, col2, col3 = st.columns([3, 1, 1])
 
     with col1:
         st.markdown(f"""
-        <div style="background:#1a1d27;padding:12px 20px;border-radius:10px;border:1px solid #2a2d3e">
-            <span style="color:#8b8fa8">Market Status</span><br>
-            <span style="color:{color};font-size:22px;font-weight:700">{status}</span>
+        <div style="background:{status_bg};padding:16px 22px;border-radius:12px;border:1px solid #1e2a3a;border-left:4px solid {color};">
+            <div style="color:#475569;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">IDX Market Status</div>
+            <div style="color:{color};font-size:20px;font-weight:700;font-family:'Space Grotesk',sans-serif;">{status}</div>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown(f"""
-        <div style="background:#1a1d27;padding:12px 20px;border-radius:10px;border:1px solid #2a2d3e;text-align:right">
-            <span style="color:#8b8fa8">WIB Time</span><br>
-            <span style="font-size:20px;font-weight:600">{now_wib.strftime('%H:%M:%S')}</span>
+        <div style="background:#0d1117;padding:16px 22px;border-radius:12px;border:1px solid #1e2a3a;text-align:center;">
+            <div style="color:#475569;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">WIB Time</div>
+            <div style="font-size:18px;font-weight:700;font-family:'JetBrains Mono',monospace;color:#e2e8f0;">{now_wib.strftime('%H:%M:%S')}</div>
         </div>
         """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown(f"""
+        <div style="background:#0d1117;padding:16px 22px;border-radius:12px;border:1px solid #1e2a3a;text-align:center;">
+            <div style="color:#475569;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px;">Date</div>
+            <div style="font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;color:#94a3b8;">{now_wib.strftime('%d %b %Y')}</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
 
     # ─────────────────────────────
     # CHART FUNCTION
@@ -452,16 +678,16 @@ with tab1:
             height=620,
             title=f"<b>{ticker}</b>  |  {signal_emoji}",
             xaxis_rangeslider_visible=False,
-            plot_bgcolor='#131722',
-            paper_bgcolor='#131722',
-            font=dict(color='#D1D4DC'),
+            plot_bgcolor='#0d1117',
+            paper_bgcolor='#0d1117',
+            font=dict(color='#94a3b8', family='Space Grotesk'),
             legend=dict(orientation='h', x=0, y=1.04,
                         bgcolor='rgba(0,0,0,0)', font=dict(size=10)),
             margin=dict(l=50, r=80, t=60, b=20),
             hovermode='x unified',
         )
-        fig.update_xaxes(gridcolor='#1e2535', showgrid=True, zeroline=False)
-        fig.update_yaxes(gridcolor='#1e2535', showgrid=True, zeroline=False, tickformat=',')
+        fig.update_xaxes(gridcolor='#1e2a3a', showgrid=True, zeroline=False)
+        fig.update_yaxes(gridcolor='#1e2a3a', showgrid=True, zeroline=False, tickformat=',')
         fig.update_yaxes(range=[0, 100], row=3, col=1)
 
         return fig
@@ -548,16 +774,203 @@ with tab1:
             lambda x: "HOLD" if x == "NEUTRAL" else x
         )
 
-        # Market Summary
-        st.subheader("📊 Market Summary")
+        # ── Market Summary ──────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">📊</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Market Summary</span>
+        </div>
+        """, unsafe_allow_html=True)
+
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("🟢 BUY",        (df_result["Signal"] == "BUY").sum())
         col2.metric("🔴 SELL",       (df_result["Signal"] == "SELL").sum())
         col3.metric("⚪ HOLD",       (df_result["Action"] == "HOLD").sum())
         col4.metric("📋 Total Scan",  len(df_result))
 
-        # Export CSV
-        st.subheader("💾 Export Data")
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+        # ══════════════════════════════════════════════════════════════════
+        # 🚨 BANDAR ALERT TABLE (NEW SECTION)
+        # ══════════════════════════════════════════════════════════════════
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">🚨</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #ef4444;padding-left:10px;">Bandar Activity Alert</span>
+            <span style="font-size:11px;color:#475569;margin-left:4px;">— Deteksi pergerakan bandar secara real-time</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # Build bandar alert rows using existing logic columns
+        bandar_alerts = []
+        for _, row in df_result.iterrows():
+            is_pump    = row.get("bandar_masuk", False)
+            is_dump    = row.get("bandar_keluar", False)
+            is_spike   = row.get("volume_spike", False)
+            is_battle  = row.get("battle_zone", False)
+
+            if not (is_pump or is_dump or is_spike or is_battle):
+                continue
+
+            # Determine primary activity type
+            if is_pump and is_dump:
+                activity   = "⚔️ BATTLE"
+                alert_type = "battle"
+                urgency    = "HIGH"
+            elif is_pump:
+                activity   = "🚀 PUMP"
+                alert_type = "pump"
+                urgency    = "HIGH"
+            elif is_dump:
+                activity   = "🔻 DUMP"
+                alert_type = "dump"
+                urgency    = "HIGH"
+            elif is_battle:
+                activity   = "⚔️ BATTLE"
+                alert_type = "battle"
+                urgency    = "MEDIUM"
+            else:
+                activity   = "⚡ VOL SPIKE"
+                alert_type = "spike"
+                urgency    = "MEDIUM"
+
+            bandar_alerts.append({
+                "Saham":      row["Saham"],
+                "Sektor":     row["Sektor"],
+                "Aktivitas":  activity,
+                "Urgency":    urgency,
+                "Harga":      row["Harga"],
+                "RSI":        row["RSI"],
+                "Signal":     row["Signal"],
+                "Pump 🚀":    "✅" if is_pump   else "—",
+                "Dump 🔻":    "✅" if is_dump   else "—",
+                "Vol Spike ⚡": "✅" if is_spike  else "—",
+                "Battle ⚔️":  "✅" if is_battle else "—",
+                "Confidence": row["Confidence"],
+                "Entry":      row["Entry"],
+                "Take Profit":row["Take Profit"],
+                "Cut Loss":   row["Cut Loss"],
+            })
+
+        if bandar_alerts:
+            df_bandar = pd.DataFrame(bandar_alerts)
+
+            # Summary pills for bandar activity
+            n_pump   = (df_bandar["Pump 🚀"]   == "✅").sum()
+            n_dump   = (df_bandar["Dump 🔻"]   == "✅").sum()
+            n_spike  = (df_bandar["Vol Spike ⚡"] == "✅").sum()
+            n_battle = (df_bandar["Battle ⚔️"] == "✅").sum()
+
+            st.markdown(f"""
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+                <div style="background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 18px;text-align:center;min-width:100px;">
+                    <div style="font-size:22px;font-weight:800;color:#ef4444;font-family:'JetBrains Mono',monospace;">{n_dump}</div>
+                    <div style="font-size:10px;color:#94a3b8;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Bandar Dump</div>
+                </div>
+                <div style="background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:10px 18px;text-align:center;min-width:100px;">
+                    <div style="font-size:22px;font-weight:800;color:#22c55e;font-family:'JetBrains Mono',monospace;">{n_pump}</div>
+                    <div style="font-size:10px;color:#94a3b8;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Bandar Pump</div>
+                </div>
+                <div style="background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);border-radius:8px;padding:10px 18px;text-align:center;min-width:100px;">
+                    <div style="font-size:22px;font-weight:800;color:#fbbf24;font-family:'JetBrains Mono',monospace;">{n_spike}</div>
+                    <div style="font-size:10px;color:#94a3b8;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Volume Spike</div>
+                </div>
+                <div style="background:rgba(168,85,247,0.12);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:10px 18px;text-align:center;min-width:100px;">
+                    <div style="font-size:22px;font-weight:800;color:#a855f7;font-family:'JetBrains Mono',monospace;">{n_battle}</div>
+                    <div style="font-size:10px;color:#94a3b8;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;">Battle Zone</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # Bandar PUMP table
+            df_pump_alert = df_bandar[df_bandar["Pump 🚀"] == "✅"].copy()
+            df_dump_alert = df_bandar[df_bandar["Dump 🔻"] == "✅"].copy()
+
+            col_pa, col_da = st.columns(2)
+
+            with col_pa:
+                st.markdown("""
+                <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:14px 18px;margin-bottom:10px;">
+                    <div style="color:#22c55e;font-size:13px;font-weight:700;">🚀 BANDAR SEDANG PUMP</div>
+                    <div style="color:#475569;font-size:11px;margin-top:2px;">Volume spike bullish — kemungkinan akumulasi</div>
+                </div>
+                """, unsafe_allow_html=True)
+                if not df_pump_alert.empty:
+                    display_pump = df_pump_alert[["Saham", "Sektor", "Harga", "RSI", "Signal", "Confidence", "Take Profit"]].copy()
+                    display_pump["Signal"] = display_pump["Signal"].apply(format_signal)
+                    st.dataframe(display_pump.sort_values("Confidence", ascending=False),
+                                 use_container_width=True, hide_index=True)
+                else:
+                    st.caption("Tidak ada sinyal pump saat ini")
+
+            with col_da:
+                st.markdown("""
+                <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:14px 18px;margin-bottom:10px;">
+                    <div style="color:#ef4444;font-size:13px;font-weight:700;">🔻 BANDAR SEDANG DUMP</div>
+                    <div style="color:#475569;font-size:11px;margin-top:2px;">Volume spike bearish — kemungkinan distribusi</div>
+                </div>
+                """, unsafe_allow_html=True)
+                if not df_dump_alert.empty:
+                    display_dump = df_dump_alert[["Saham", "Sektor", "Harga", "RSI", "Signal", "Confidence", "Cut Loss"]].copy()
+                    display_dump["Signal"] = display_dump["Signal"].apply(format_signal)
+                    st.dataframe(display_dump.sort_values("Confidence", ascending=False),
+                                 use_container_width=True, hide_index=True)
+                else:
+                    st.caption("Tidak ada sinyal dump saat ini")
+
+            # Battle Zone & Spike table
+            df_other = df_bandar[
+                (df_bandar["Pump 🚀"] != "✅") & (df_bandar["Dump 🔻"] != "✅")
+            ].copy()
+
+            if not df_other.empty:
+                st.markdown("""
+                <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:10px;padding:14px 18px;margin:10px 0;">
+                    <div style="color:#a855f7;font-size:13px;font-weight:700;">⚔️ BATTLE ZONE & VOLUME SPIKE</div>
+                    <div style="color:#475569;font-size:11px;margin-top:2px;">Tanda-tanda pertarungan bandar — perlu perhatian ekstra</div>
+                </div>
+                """, unsafe_allow_html=True)
+                display_other = df_other[["Saham", "Aktivitas", "Sektor", "Harga", "RSI", "Signal", "Vol Spike ⚡", "Battle ⚔️", "Confidence"]].copy()
+                display_other["Signal"] = display_other["Signal"].apply(format_signal)
+                st.dataframe(display_other.sort_values("Confidence", ascending=False),
+                             use_container_width=True, hide_index=True)
+
+            # Full Bandar Alert table
+            st.markdown("""
+            <div style="margin:14px 0 8px 0;">
+                <span style="font-size:12px;font-weight:700;color:#64748b;letter-spacing:0.08em;text-transform:uppercase;">📋 Tabel Lengkap Bandar Activity</span>
+            </div>
+            """, unsafe_allow_html=True)
+            display_full = df_bandar[[
+                "Saham", "Sektor", "Aktivitas", "Urgency",
+                "Harga", "RSI", "Signal",
+                "Pump 🚀", "Dump 🔻", "Vol Spike ⚡", "Battle ⚔️",
+                "Confidence", "Entry", "Take Profit", "Cut Loss"
+            ]].copy()
+            display_full["Signal"] = display_full["Signal"].apply(format_signal)
+            st.dataframe(
+                display_full.sort_values("Confidence", ascending=False),
+                use_container_width=True, hide_index=True
+            )
+
+        else:
+            st.markdown("""
+            <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;padding:20px 24px;text-align:center;color:#475569;">
+                <div style="font-size:28px;margin-bottom:8px;">🔍</div>
+                <div style="font-size:13px;">Tidak ada aktivitas bandar terdeteksi dari scan saat ini.</div>
+                <div style="font-size:11px;margin-top:4px;color:#334155;">Coba perluas daftar saham atau ubah periode scan.</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+        # ── Export CSV ──────────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">💾</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Export Data</span>
+        </div>
+        """, unsafe_allow_html=True)
         csv_data = df_result.to_csv(index=False).encode("utf-8")
         st.download_button(
             label="⬇️ Download Hasil Scan (.csv)",
@@ -566,25 +979,40 @@ with tab1:
             mime="text/csv"
         )
 
-        # Sector Breakdown
-        st.subheader("🏭 Sector Breakdown")
+        # ── Sector Breakdown ────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">🏭</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Sector Breakdown</span>
+        </div>
+        """, unsafe_allow_html=True)
         sector_df = df_result.groupby("Sektor").agg(
             Total=("Saham",  "count"),
             Buy  =("Signal", lambda x: (x == "BUY").sum()),
             Sell =("Signal", lambda x: (x == "SELL").sum()),
             Hold =("Action", lambda x: (x == "HOLD").sum()),
         ).reset_index()
-        st.dataframe(sector_df, use_container_width=True)
+        st.dataframe(sector_df, use_container_width=True, hide_index=True)
 
-        # Market Scanner
-        st.subheader("📈 Market Scanner")
+        # ── Market Scanner ───────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">📈</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Market Scanner</span>
+        </div>
+        """, unsafe_allow_html=True)
         df_display = df_result.copy()
         df_display["Signal"] = df_display["Signal"].apply(format_signal)
         st.dataframe(df_display.sort_values(by="Confidence", ascending=False),
-                     use_container_width=True)
+                     use_container_width=True, hide_index=True)
 
-        # Top Signals
-        st.subheader("🎯 Top Trading Signals")
+        # ── Top Signals ──────────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">🎯</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Top Trading Signals</span>
+        </div>
+        """, unsafe_allow_html=True)
         top_buy  = df_result[df_result["Signal"] == "BUY"].sort_values(
             by="Confidence", ascending=False).head(5).copy()
         top_sell = df_result[df_result["Signal"] == "SELL"].sort_values(
@@ -592,34 +1020,57 @@ with tab1:
 
         col1, col2 = st.columns(2)
         with col1:
-            st.markdown("### 🟢 Top BUY")
+            st.markdown("""
+            <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                <span style="color:#22c55e;font-weight:700;font-size:13px;">🟢 TOP BUY SIGNALS</span>
+            </div>
+            """, unsafe_allow_html=True)
             top_buy["Signal"] = top_buy["Signal"].apply(format_signal)
-            st.dataframe(top_buy, use_container_width=True)
+            st.dataframe(top_buy, use_container_width=True, hide_index=True)
         with col2:
-            st.markdown("### 🔴 Top SELL")
+            st.markdown("""
+            <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                <span style="color:#ef4444;font-weight:700;font-size:13px;">🔴 TOP SELL SIGNALS</span>
+            </div>
+            """, unsafe_allow_html=True)
             top_sell["Signal"] = top_sell["Signal"].apply(format_signal)
-            st.dataframe(top_sell, use_container_width=True)
+            st.dataframe(top_sell, use_container_width=True, hide_index=True)
 
-        # Trading Plan
-        st.subheader("💰 Trading Plan")
+        # ── Trading Plan ─────────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">💰</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Trading Plan</span>
+        </div>
+        """, unsafe_allow_html=True)
         plan_df = df_result[[
             "Saham", "Sektor", "Harga", "Entry", "Take Profit",
             "Cut Loss", "RR Ratio", "Action", "Confidence"
         ]].sort_values(by="Confidence", ascending=False).copy()
         plan_df["Action"] = plan_df["Action"].apply(format_signal)
-        st.dataframe(plan_df, use_container_width=True)
+        st.dataframe(plan_df, use_container_width=True, hide_index=True)
 
-        # Sector Tables
-        st.subheader("🏭 Sector Tables")
+        # ── Sector Tables ─────────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">🏭</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Sector Tables</span>
+        </div>
+        """, unsafe_allow_html=True)
         for sector, list_stock in sector_map.items():
             sdf = df_result[df_result["Saham"].isin(list_stock)].copy()
             if not sdf.empty:
-                st.markdown(f"### {sector}")
+                st.markdown(f"<div style='font-size:13px;font-weight:700;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin:12px 0 6px 0;'>▸ {sector}</div>", unsafe_allow_html=True)
                 sdf["Signal"] = sdf["Signal"].apply(format_signal)
-                st.dataframe(sdf, use_container_width=True)
+                st.dataframe(sdf, use_container_width=True, hide_index=True)
 
-        # Chart
-        st.subheader("📉 Real Chart")
+        # ── Chart ─────────────────────────────────────────────────────────
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">📉</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Real Chart</span>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Watchlist shortcut buttons
         if st.session_state.watchlist:
@@ -644,12 +1095,40 @@ with tab1:
         row      = df_result[df_result["Saham"] == selected].iloc[0]
         df_chart = cached_fetch(add_jk(selected), period, interval)
 
-        st.markdown("### 🧠 Bandarmology Insight")
-        col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Bandar Masuk",  "YES" if row.get("bandar_masuk",  False) else "NO")
-        col2.metric("Bandar Keluar", "YES" if row.get("bandar_keluar", False) else "NO")
-        col3.metric("Volume Spike",  "YES" if row.get("volume_spike",  False) else "NO")
-        col4.metric("Battle Zone",   "YES" if row.get("battle_zone",   False) else "NO")
+        # Bandarmology Insight
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:18px 0 10px 0;">
+            <span style="font-size:15px;">🧠</span>
+            <span style="font-size:14px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #a855f7;padding-left:10px;">Bandarmology Insight</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+        def _bm_color(val): return "#22c55e" if val == "YES" else "#334155"
+        bm_val  = "YES" if row.get("bandar_masuk",  False) else "NO"
+        bk_val  = "YES" if row.get("bandar_keluar", False) else "NO"
+        vs_val  = "YES" if row.get("volume_spike",  False) else "NO"
+        btz_val = "YES" if row.get("battle_zone",   False) else "NO"
+
+        st.markdown(f"""
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+            <div style="background:{_bm_color(bm_val)}22;border:1px solid {_bm_color(bm_val)}44;border-radius:8px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:18px;font-weight:800;color:{_bm_color(bm_val)};font-family:'JetBrains Mono',monospace;">{bm_val}</div>
+                <div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Bandar Masuk</div>
+            </div>
+            <div style="background:{_bm_color(bk_val)}22;border:1px solid {_bm_color(bk_val)}44;border-radius:8px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:18px;font-weight:800;color:{_bm_color(bk_val)};font-family:'JetBrains Mono',monospace;">{bk_val}</div>
+                <div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Bandar Keluar</div>
+            </div>
+            <div style="background:{_bm_color(vs_val)}22;border:1px solid {_bm_color(vs_val)}44;border-radius:8px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:18px;font-weight:800;color:{_bm_color(vs_val)};font-family:'JetBrains Mono',monospace;">{vs_val}</div>
+                <div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Volume Spike</div>
+            </div>
+            <div style="background:{_bm_color(btz_val)}22;border:1px solid {_bm_color(btz_val)}44;border-radius:8px;padding:12px 20px;text-align:center;min-width:120px;">
+                <div style="font-size:18px;font-weight:800;color:{_bm_color(btz_val)};font-family:'JetBrains Mono',monospace;">{btz_val}</div>
+                <div style="font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Battle Zone</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
         if df_chart is not None:
             fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
@@ -658,7 +1137,12 @@ with tab1:
         # ─────────────────────────────
         # 🔮 FUTURE PREDICTION CHART
         # ─────────────────────────────
-        st.subheader("🔮 Prediction Future Chart (30 Hari - Smart Projection)")
+        st.markdown("""
+        <div style="display:flex;align-items:center;gap:8px;margin:24px 0 12px 0;">
+            <span style="font-size:18px;">🔮</span>
+            <span style="font-size:16px;font-weight:700;color:#e2e8f0;font-family:'Space Grotesk',sans-serif;border-left:3px solid #2563eb;padding-left:10px;">Prediction Future Chart <span style="font-size:11px;font-weight:400;color:#475569;">(30 Hari — Smart Projection)</span></span>
+        </div>
+        """, unsafe_allow_html=True)
 
         df_future = cached_fetch(add_jk(selected), period, interval)
 
@@ -715,10 +1199,10 @@ with tab1:
 
             fig_pred.update_layout(
                 height=520,
-                title=f"<b>AI Trend Prediction - {selected}</b>",
-                plot_bgcolor='#131722',
-                paper_bgcolor='#131722',
-                font=dict(color='#D1D4DC'),
+                title=f"<b>AI Trend Prediction — {selected}</b>",
+                plot_bgcolor='#0d1117',
+                paper_bgcolor='#0d1117',
+                font=dict(color='#94a3b8', family='Space Grotesk'),
                 hovermode="x unified",
                 legend=dict(orientation="h"),
                 margin=dict(l=40, r=40, t=60, b=40)
@@ -726,7 +1210,9 @@ with tab1:
 
             st.plotly_chart(fig_pred, use_container_width=True)
 
-            st.markdown("### 📊 Prediction Analysis")
+            st.markdown("""
+            <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin:16px 0 8px 0;">📊 Prediction Analysis</div>
+            """, unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
             col1.metric("Trend",               trend)
             col2.metric("Expected Return",      f"{expected_return:.2f}%")
