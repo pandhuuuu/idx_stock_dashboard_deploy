@@ -47,9 +47,23 @@ if not API_KEY:
 # DEFAULT TICKERS
 # ──────────────────────────────────────────────
 DEFAULT_TICKERS = [
-    "BBCA","BBRI","BMRI","BRIS","EMAS","ANTM","MDKA","BRMS","ARCI","WBSA",
-    "DEFI","ENRG","PGAS","ADRO","PTBA","AALI","ADMR","ADHI","AKRA",
-    "PTRO","MBMA","BUMI","BRPT","MEDC","CDIA","JPFA","MYOR","HMSP",
+    "BBCA","BBRI","BMRI","BRIS","BBNI","BBTN","BJBR","BJTM","BDMN","MEGA",
+    "TLKM","EXCL","ISAT","MTEL","TOWR","TBIG",
+    "ASII","UNVR","ICBP","INDF","MYOR","KLBF","CPIN","JPFA","ULTJ","SIDO","HMSP","GGRM",
+    "ADRO","ADMR","PTBA","ITMG","INDY","HRUM","MBMA","PGAS","MEDC","ENRG",
+    "ANTM","MDKA","BRMS","INCO","ARCI","PSAB","DKFT",
+    "AALI","LSIP","SSMS","TBLA",
+    "AKRA","ERAA","ACES","MAPI","RALS","LPPF",
+    "GOTO","BUKA","DCII",
+    "BRPT","SMGR","INTP","WSKT","WIKA","ADHI","PTPP","WEGE","WTON",
+    "JSMR","CMNP","META",
+    "BSDE","CTRA","SMRA","PWON","DMAS",
+    "SCMA","MDIA","ELSA","IPCC",
+    "KIJA","ASGR","TRON",
+    "AMRT","HEAL","SILO","MIKA",
+    "FREN","EDGE","NICE","PGEO",
+    "SRTG","BNLI","ARTO","BBYB","AGRO",
+    "DEFI","WBSA","CDIA","PTRO","BUMI"
 ]
 
 # ──────────────────────────────────────────────
