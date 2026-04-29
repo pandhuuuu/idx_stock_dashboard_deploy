@@ -33,7 +33,7 @@ from zoneinfo import ZoneInfo
 SUPPORTED_TICKERS = [
     "BBCA", "BBRI", "BMRI", "BNGA", "BRIS", "BBNI",
     "TLKM", "EXCL", "ISAT",
-    "ADRO", "PTBA", "PGAS", "MEDC", "ITMG",
+    "ADRO", "PTBA", "PGAS", "MEDC", "ITMG", "PTRO",
     "ANTM", "MDKA", "INCO", "BRMS",
     "UNVR", "ICBP", "INDF", "MYOR",
     "GOTO", "WIFI",
