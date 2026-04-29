@@ -89,14 +89,19 @@ if isinstance(ihsg_last, (int, float)):
 
 # Movers
 if movers:
-    ticker_html += f"""
-    <span style="margin-right:30px;">
-        {m['symbol']} {m['price']:,.0f}
-        <span style="color:{_ticker_color(m['change'])};">
-            {m['change']:+.2f}%
+    for m in movers:
+        symbol = m.get("symbol", "-")
+        price  = m.get("price", 0)
+        change = m.get("change", 0)
+
+        ticker_html += f"""
+        <span style="margin-right:30px;">
+            {symbol} {price:,.0f}
+            <span style="color:{_ticker_color(change)};">
+                {change:+.2f}%
+            </span>
         </span>
-    </span>
-    """
+        """
 
 st.markdown(f"""
 <style>
