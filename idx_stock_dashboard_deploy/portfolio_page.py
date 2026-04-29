@@ -40,6 +40,7 @@ SUPPORTED_TICKERS = [
     "ASII", "AUTO", "AALI", "LSIP",
     "SMGR", "INTP", "WIKA", "ADHI",
     "SIDO", "KLBF", "KAEF", "MIKA",
+    "WBSA",
 ]
 
 COMMON_EMITENS = sorted(SUPPORTED_TICKERS)
