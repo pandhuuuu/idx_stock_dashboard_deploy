@@ -51,7 +51,7 @@ st.markdown("""
         border-radius: 12px;
         font-weight: 1100;
         padding: 8px 20px;
-        width: 200%;
+        width: 100%;
         height: 90px;
     }
     .stButton > button:hover { opacity: 0.9; }
