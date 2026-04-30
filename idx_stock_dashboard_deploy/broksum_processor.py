@@ -467,6 +467,120 @@ def broker_activity(
     }
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# STOCK ACTIVITY  —  analisis 1 saham
+# ─────────────────────────────────────────────────────────────────────────────
+
+def stock_activity(
+    df: pd.DataFrame,
+    stock_code: str,
+    top_n: int = 10,
+    date_filter: "str | pd.Timestamp | None" = None,
+) -> dict:
+    """
+    Tampilkan aktivitas untuk saham tertentu, meliputi:
+    Top broker net buy, Top broker net sell, dan total net_value.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Output dari ``process_broksum()``.
+    stock_code : str
+        Kode saham yang ingin dianalisis (contoh: ``"BBCA"``).
+    top_n : int
+        Jumlah broker maksimum yang ditampilkan.
+    date_filter : str | pd.Timestamp | None
+        Filter tanggal (opsional).
+
+    Returns
+    -------
+    dict dengan kunci:
+        "top_buy": pd.DataFrame,
+        "top_sell": pd.DataFrame,
+        "summary": dict (total_buy, total_sell, net_value, signal)
+    """
+    _check_processed(df)
+
+    stock_code = str(stock_code).strip().upper()
+    available = df["stock_code"].unique().tolist()
+    if stock_code not in available:
+        raise ValueError(
+            f"Saham '{stock_code}' tidak ditemukan di data.\n"
+            f"Contoh saham tersedia: {sorted(available)[:15]}"
+        )
+
+    work = df[df["stock_code"] == stock_code].copy()
+
+    if date_filter is not None:
+        ts = pd.Timestamp(date_filter)
+        work = work[work["date"].dt.normalize() == ts.normalize()]
+        if work.empty:
+            raise ValueError(
+                f"Saham '{stock_code}' tidak memiliki data pada tanggal {date_filter}."
+            )
+
+    # Agregasi per broker
+    agg = (
+        work.groupby("broker_code", observed=True)
+        .agg(
+            buy_value  =("buy_value",  "sum"),
+            sell_value =("sell_value", "sum"),
+            net_value  =("net_value",  "sum"),
+            total_value=("total_value","sum"),
+        )
+        .reset_index()
+    )
+
+    agg["net_ratio"] = (
+        agg["net_value"] / agg["total_value"].replace(0, float("nan")) * 100
+    ).round(2)
+
+    top_buy = (
+        agg[agg["net_value"] > 0]
+        .sort_values("net_value", ascending=False)
+        .head(top_n)
+        .reset_index(drop=True)
+    )
+    top_buy.insert(0, "rank", range(1, len(top_buy) + 1))
+
+    top_sell = (
+        agg[agg["net_value"] < 0]
+        .sort_values("net_value", ascending=True)
+        .head(top_n)
+        .reset_index(drop=True)
+    )
+    top_sell.insert(0, "rank", range(1, len(top_sell) + 1))
+
+    total_buy = agg["buy_value"].sum()
+    total_sell = agg["sell_value"].sum()
+    total_net = total_buy - total_sell
+
+    # Signal Logic
+    cross_count = work["is_cross"].sum()
+    
+    # Simple heuristic
+    if cross_count > len(work) * 0.3:  # Jika > 30% transaksi adalah cross
+        signal = "Cross / Neutral"
+    elif total_net > 0:
+        signal = "Akumulasi"
+    elif total_net < 0:
+        signal = "Distribusi"
+    else:
+        signal = "Neutral"
+
+    return {
+        "top_buy": top_buy,
+        "top_sell": top_sell,
+        "summary": {
+            "total_buy": total_buy,
+            "total_sell": total_sell,
+            "total_net": total_net,
+            "signal": signal,
+            "cross_count": cross_count
+        }
+    }
+
+
 # GUARD: pastikan df sudah diproses sebelum agregasi
 # ─────────────────────────────────────────────────────────────────────────────
 

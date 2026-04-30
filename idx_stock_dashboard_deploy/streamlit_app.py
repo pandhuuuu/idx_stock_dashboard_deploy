@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
 from portfolio_page import render_portfolio_page
-from broksum_processor import process_broksum, broker_activity
+from broksum_processor import process_broksum, broker_activity, stock_activity, market_overview
 from idx_stock_monitor import (
     fetch_data,
     calculate_signals,
@@ -1863,89 +1863,230 @@ with tab3:
         
     available_brokers = sorted(df_processed["broker_code"].unique())
     available_dates = sorted(df_processed["date"].dt.date.unique(), reverse=True)
+    available_stocks = sorted(df_processed["stock_code"].unique())
+
+    # Sub-tabs for Broker Activity
+    subtab1, subtab2, subtab3 = st.tabs(["🌐 Overview", "👤 By Broker", "📈 By Stock"])
     
-    col_brk, col_dt, col_top, col_sig = st.columns(4)
-    with col_brk:
-        selected_broker = st.selectbox("Pilih Broker", available_brokers, index=0)
-    with col_dt:
-        selected_date = st.selectbox("Filter Tanggal", ["Semua"] + [str(d) for d in available_dates])
-    with col_top:
-        top_n = st.number_input("Top N Saham", min_value=3, max_value=50, value=10)
-    with col_sig:
-        sig_q = st.slider("Signifikansi (Persentil)", min_value=0.0, max_value=0.9, value=0.5, step=0.1)
-
-    date_filter = None if selected_date == "Semua" else selected_date
-
-    try:
-        activity_res = broker_activity(
-            df_processed, 
-            broker_code=selected_broker, 
-            top_n=int(top_n), 
-            significance_quantile=float(sig_q),
-            date_filter=date_filter
-        )
+    with subtab1:
+        st.markdown("### 🌐 Market Overview")
+        col_dt_ov, col_top_ov = st.columns([1, 3])
+        with col_dt_ov:
+            sel_date_ov = st.selectbox("Filter Tanggal (Overview)", ["Semua"] + [str(d) for d in available_dates])
         
-        meta = activity_res["meta"]
-        st.caption(f"Menampilkan data untuk broker **{meta['broker_code']}** pada tanggal **{meta['date_filter']}** (Total saham setelah filter signifikansi: {meta['n_stocks_after_filter']})")
+        date_filter_ov = None if sel_date_ov == "Semua" else sel_date_ov
         
-        def format_rp(val):
-            return f"Rp {val:,.0f}"
+        try:
+            overview_df = market_overview(df_processed, date_filter=date_filter_ov)
+            def color_status(val):
+                color = "#22c55e" if val == "Net Buy" else "#ef4444"
+                return f"color: {color}; font-weight: 700"
 
-        col_buy, col_sell = st.columns(2)
-        
-        with col_buy:
-            st.markdown("""
-            <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
-                <span style="color:#22c55e;font-weight:700;font-size:13px;">🟢 TOP BUY (Akumulasi)</span>
-            </div>
-            """, unsafe_allow_html=True)
+            st.dataframe(
+                overview_df.style.map(color_status, subset=["status"]),
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "rank": st.column_config.NumberColumn("#", width="small"),
+                    "broker_code": st.column_config.TextColumn("Broker", width="small"),
+                    "total_buy": st.column_config.NumberColumn("Total Buy", format="Rp %,.0f"),
+                    "total_sell": st.column_config.NumberColumn("Total Sell", format="Rp %,.0f"),
+                    "net_value": st.column_config.NumberColumn("Net Value", format="Rp %,.0f"),
+                    "total_value": st.column_config.NumberColumn("Total", format="Rp %,.0f"),
+                    "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
+                    "buy_pct": st.column_config.NumberColumn("Buy %", format="%.2f%%"),
+                    "cross_count": st.column_config.NumberColumn("Cross", width="small"),
+                    "stocks_traded": st.column_config.NumberColumn("Saham", width="small"),
+                    "status": st.column_config.TextColumn("Status"),
+                }
+            )
+        except Exception as e:
+            st.error(f"Gagal memuat overview: {str(e)}")
+
+    with subtab2:
+        st.markdown("### 👤 Broker Drill Down")
+        col_brk, col_dt, col_top, col_sig = st.columns(4)
+        with col_brk:
+            selected_broker = st.selectbox("Pilih Broker", available_brokers, index=0)
+        with col_dt:
+            selected_date = st.selectbox("Filter Tanggal", ["Semua"] + [str(d) for d in available_dates], key="date_by_broker")
+        with col_top:
+            top_n = st.number_input("Top N Saham", min_value=3, max_value=50, value=10)
+        with col_sig:
+            sig_q = st.slider("Signifikansi (Persentil)", min_value=0.0, max_value=0.9, value=0.5, step=0.1)
+
+        date_filter = None if selected_date == "Semua" else selected_date
+
+        try:
+            activity_res = broker_activity(
+                df_processed, 
+                broker_code=selected_broker, 
+                top_n=int(top_n), 
+                significance_quantile=float(sig_q),
+                date_filter=date_filter
+            )
             
-            top_buy_df = activity_res["top_buy"].copy()
-            if not top_buy_df.empty:
-                st.dataframe(
-                    top_buy_df, 
-                    use_container_width=True, 
-                    hide_index=True,
-                    column_config={
-                        "rank": st.column_config.NumberColumn("#", width="small"),
-                        "stock_code": st.column_config.TextColumn("Saham", width="small"),
-                        "net_value": st.column_config.NumberColumn("Net Buy", format="Rp %,.0f"),
-                        "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
-                        "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
-                        "total_value": None,
-                        "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
-                        "n_dates": None,
-                    }
-                )
-            else:
-                st.info("Tidak ada data akumulasi signifikan.")
+            meta = activity_res["meta"]
+            st.caption(f"Menampilkan data untuk broker **{meta['broker_code']}** pada tanggal **{meta['date_filter']}** (Total saham setelah filter signifikansi: {meta['n_stocks_after_filter']})")
+            
+            col_buy, col_sell = st.columns(2)
+            
+            with col_buy:
+                st.markdown("""
+                <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                    <span style="color:#22c55e;font-weight:700;font-size:13px;">🟢 TOP BUY (Akumulasi)</span>
+                </div>
+                """, unsafe_allow_html=True)
                 
-        with col_sell:
-            st.markdown("""
-            <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
-                <span style="color:#ef4444;font-weight:700;font-size:13px;">🔴 TOP SELL (Distribusi)</span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            top_sell_df = activity_res["top_sell"].copy()
-            if not top_sell_df.empty:
-                st.dataframe(
-                    top_sell_df, 
-                    use_container_width=True, 
-                    hide_index=True,
-                    column_config={
-                        "rank": st.column_config.NumberColumn("#", width="small"),
-                        "stock_code": st.column_config.TextColumn("Saham", width="small"),
-                        "net_value": st.column_config.NumberColumn("Net Sell", format="Rp %,.0f"),
-                        "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
-                        "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
-                        "total_value": None,
-                        "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
-                        "n_dates": None,
-                    }
-                )
-            else:
-                st.info("Tidak ada data distribusi signifikan.")
+                top_buy_df = activity_res["top_buy"].copy()
+                if not top_buy_df.empty:
+                    st.dataframe(
+                        top_buy_df, 
+                        use_container_width=True, 
+                        hide_index=True,
+                        column_config={
+                            "rank": st.column_config.NumberColumn("#", width="small"),
+                            "stock_code": st.column_config.TextColumn("Saham", width="small"),
+                            "net_value": st.column_config.NumberColumn("Net Buy", format="Rp %,.0f"),
+                            "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
+                            "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
+                            "total_value": None,
+                            "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
+                            "n_dates": None,
+                        }
+                    )
+                else:
+                    st.info("Tidak ada data akumulasi signifikan.")
+                    
+            with col_sell:
+                st.markdown("""
+                <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                    <span style="color:#ef4444;font-weight:700;font-size:13px;">🔴 TOP SELL (Distribusi)</span>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                top_sell_df = activity_res["top_sell"].copy()
+                if not top_sell_df.empty:
+                    st.dataframe(
+                        top_sell_df, 
+                        use_container_width=True, 
+                        hide_index=True,
+                        column_config={
+                            "rank": st.column_config.NumberColumn("#", width="small"),
+                            "stock_code": st.column_config.TextColumn("Saham", width="small"),
+                            "net_value": st.column_config.NumberColumn("Net Sell", format="Rp %,.0f"),
+                            "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
+                            "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
+                            "total_value": None,
+                            "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
+                            "n_dates": None,
+                        }
+                    )
+                else:
+                    st.info("Tidak ada data distribusi signifikan.")
 
-    except Exception as e:
-        st.error(f"Gagal menampilkan aktivitas broker: {str(e)}")
+        except Exception as e:
+            st.error(f"Gagal menampilkan aktivitas broker: {str(e)}")
+
+    with subtab3:
+        st.markdown("### 📈 Stock Analysis")
+        col_stk, col_dt_stk, col_top_stk = st.columns([2, 1, 1])
+        with col_stk:
+            selected_stock = st.text_input("Kode Saham", value=available_stocks[0] if available_stocks else "")
+        with col_dt_stk:
+            selected_date_stk = st.selectbox("Filter Tanggal", ["Semua"] + [str(d) for d in available_dates], key="date_by_stock")
+        with col_top_stk:
+            top_n_stk = st.number_input("Top N Broker", min_value=3, max_value=50, value=10, key="top_by_stock")
+
+        date_filter_stk = None if selected_date_stk == "Semua" else selected_date_stk
+
+        if selected_stock:
+            try:
+                stock_res = stock_activity(
+                    df_processed, 
+                    stock_code=selected_stock, 
+                    top_n=int(top_n_stk), 
+                    date_filter=date_filter_stk
+                )
+                
+                summ = stock_res["summary"]
+                
+                # Signal card
+                sig = summ["signal"]
+                if sig == "Akumulasi":
+                    sig_color = "#22c55e"
+                    sig_bg = "rgba(34,197,94,0.15)"
+                elif sig == "Distribusi":
+                    sig_color = "#ef4444"
+                    sig_bg = "rgba(239,68,68,0.15)"
+                else:
+                    sig_color = "#fbbf24"
+                    sig_bg = "rgba(251,191,36,0.15)"
+
+                st.markdown(f"""
+                <div style="display:flex;gap:10px;margin-bottom:14px;">
+                    <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;padding:16px;flex:1;">
+                        <div style="color:#64748b;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Signal (By Net Value)</div>
+                        <div style="margin-top:6px;display:inline-block;background:{{sig_bg}};color:{{sig_color}};padding:4px 12px;border-radius:6px;font-weight:800;font-size:16px;">{{sig}}</div>
+                    </div>
+                    <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;padding:16px;flex:1;">
+                        <div style="color:#64748b;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Total Net Value</div>
+                        <div style="margin-top:6px;color:{'#22c55e' if summ['total_net'] > 0 else '#ef4444'};font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;">Rp {{summ['total_net']:,.0f}}</div>
+                    </div>
+                    <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;padding:16px;flex:1;">
+                        <div style="color:#64748b;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Total Buy / Sell</div>
+                        <div style="margin-top:6px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">Buy: Rp {{summ['total_buy']:,.0f}}<br>Sell: Rp {{summ['total_sell']:,.0f}}</div>
+                    </div>
+                </div>
+                """.format(sig=sig, sig_bg=sig_bg, sig_color=sig_color, summ=summ), unsafe_allow_html=True)
+                
+                col_b, col_s = st.columns(2)
+                
+                with col_b:
+                    st.markdown("""
+                    <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                        <span style="color:#22c55e;font-weight:700;font-size:13px;">🟢 BROKER AKUMULASI (Top Buy)</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if not stock_res["top_buy"].empty:
+                        st.dataframe(
+                            stock_res["top_buy"], 
+                            use_container_width=True, hide_index=True,
+                            column_config={
+                                "rank": st.column_config.NumberColumn("#", width="small"),
+                                "broker_code": st.column_config.TextColumn("Broker", width="small"),
+                                "net_value": st.column_config.NumberColumn("Net Buy", format="Rp %,.0f"),
+                                "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
+                                "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
+                                "total_value": None,
+                                "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
+                            }
+                        )
+                    else:
+                        st.info("Tidak ada broker akumulasi.")
+                        
+                with col_s:
+                    st.markdown("""
+                    <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                        <span style="color:#ef4444;font-weight:700;font-size:13px;">🔴 BROKER DISTRIBUSI (Top Sell)</span>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    if not stock_res["top_sell"].empty:
+                        st.dataframe(
+                            stock_res["top_sell"], 
+                            use_container_width=True, hide_index=True,
+                            column_config={
+                                "rank": st.column_config.NumberColumn("#", width="small"),
+                                "broker_code": st.column_config.TextColumn("Broker", width="small"),
+                                "net_value": st.column_config.NumberColumn("Net Sell", format="Rp %,.0f"),
+                                "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
+                                "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
+                                "total_value": None,
+                                "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
+                            }
+                        )
+                    else:
+                        st.info("Tidak ada broker distribusi.")
+
+            except Exception as e:
+                st.error(f"Gagal menampilkan aktivitas saham: {str(e)}")
