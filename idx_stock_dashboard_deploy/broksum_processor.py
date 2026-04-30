@@ -141,7 +141,7 @@ def process_broksum(
     # ── 3. Buang baris tanggal tidak valid ───────────────────────────────────
     invalid_dates = out["date"].isna().sum()
     if invalid_dates > 0:
-        print(f"[broksum_processor] ⚠  {invalid_dates} baris dibuang "
+        print(f"[broksum_processor] WARN: {invalid_dates} baris dibuang "
               f"karena tanggal tidak valid.")
     out = out.dropna(subset=["date"]).reset_index(drop=True)
 
@@ -179,9 +179,9 @@ def process_broksum(
     n_sell   = int((out["status"] == "Net Sell").sum())
     n_neutral= int((out["status"] == "Neutral").sum())
     print(
-        f"[broksum_processor] ✅ {n_total} baris diproses | "
+        f"[broksum_processor] OK: {n_total} baris diproses | "
         f"Net Buy: {n_buy} | Net Sell: {n_sell} | Neutral: {n_neutral} | "
-        f"Cross-trade: {n_cross} (threshold ≥ {cross_total_threshold:,.0f})"
+        f"Cross-trade: {n_cross} (threshold >= {cross_total_threshold:,.0f})"
     )
 
     return out
@@ -353,13 +353,13 @@ if __name__ == "__main__":
                 })
 
     raw = pd.DataFrame(rows)
-    print("─" * 60)
+    print("-" * 60)
     print(f"Raw data: {len(raw)} baris")
-    print("─" * 60)
+    print("-" * 60)
 
     processed = process_broksum(raw)
 
-    print("\n── Sample output (5 baris) ──")
+    print("\n-- Sample output (5 baris) --")
     print(processed[[
         "date", "stock_code", "broker_code",
         "buy_value", "sell_value",
@@ -367,16 +367,16 @@ if __name__ == "__main__":
         "status", "is_cross"
     ]].head(5).to_string(index=False))
 
-    print("\n── Ringkasan per Saham (3 baris) ──")
+    print("\n-- Ringkasan per Saham (3 baris) --")
     print(summarize_by_stock(processed).head(3).to_string(index=False))
 
-    print("\n── Top 5 Net Buy Broker ──")
+    print("\n-- Top 5 Net Buy Broker --")
     print(top_net_buy(processed, n=5).to_string(index=False))
 
-    print("\n── Top 5 Net Sell Broker ──")
+    print("\n-- Top 5 Net Sell Broker --")
     print(top_net_sell(processed, n=5).to_string(index=False))
 
-    print("\n── Cross-Trade Terdeteksi ──")
+    print("\n-- Cross-Trade Terdeteksi --")
     ct = detect_cross_trades(processed)
     print(f"Total cross-trade rows: {len(ct)}")
     print(ct.head(5).to_string(index=False))
