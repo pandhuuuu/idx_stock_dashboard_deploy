@@ -1838,7 +1838,7 @@ with tab3:
         import random
         brokers = ["YU", "RX", "ZP", "AK", "DH", "LG", "CP", "CC", "PD", "NI"]
         stocks  = ["BBCA", "BBRI", "BMRI", "TLKM", "GOTO", "ANTM", "ADRO", "PGAS", "BBNI", "ASII"]
-        dates   = pd.date_range(end=pd.Timestamp.today(), periods=5, freq="B")
+        dates   = pd.date_range(end=pd.Timestamp.today(), periods=10, freq="B")
         
         rows = []
         for d in dates:
