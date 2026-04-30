@@ -887,10 +887,10 @@ else:
 st.markdown("""
 <div style="padding: 24px 0 8px 0;">
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:4px;">
-        <span style="font-size:32px;">📊</span>
+        <span style="font-size:32px;">🧿</span>
         <div>
             <div style="font-size:26px; font-weight:800; color:#e2e8f0; letter-spacing:-0.02em; font-family:'Space Grotesk',sans-serif;">
-                IDX Stock Dashboard
+                MarketLens
             </div>
             <div style="font-size:12px; color:#475569; font-family:'JetBrains Mono',monospace; letter-spacing:0.08em;">
                 CACING-CACING 🪱 &nbsp;|&nbsp; NAGA-NAGA 𓆩🐉 &nbsp;|&nbsp; REAL-TIME MARKET SCANNER
