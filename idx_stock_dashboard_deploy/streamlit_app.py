@@ -10,7 +10,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
 from portfolio_page import render_portfolio_page
-
+from broksum_processor import process_broksum, broker_activity
 from idx_stock_monitor import (
     fetch_data,
     calculate_signals,
@@ -847,7 +847,7 @@ if mode == "Auto IDX Full":
 else:
     tickers_source = DEFAULT_TICKERS
 
-tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tickers_source[:100]))
+tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tickers_source[:30]))
 period           = st.sidebar.selectbox("Period",   ["3mo", "6mo", "9mo", "1y", "2y", "3y", "5y", "10y"], index=3)
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk", "1mo"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang")
@@ -914,7 +914,7 @@ except Exception:
 # ─────────────────────────────
 # TABS — INTEGRASI UTAMA
 # ─────────────────────────────
-tab1, tab2 = st.tabs(["📊  Market Scanner", "💼  Portofolio Saya"])
+tab1, tab2, tab3 = st.tabs(["📊  Market Scanner", "💼  Portofolio Saya", "🏢  Broker Activity"])
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1823,3 +1823,129 @@ with tab1:
 # ═══════════════════════════════════════════════════════════════════════════
 with tab2:
     render_portfolio_page()
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# TAB 3 — BROKER ACTIVITY
+# ═══════════════════════════════════════════════════════════════════════════
+with tab3:
+    st.markdown("## 🏢 Broker Activity Dashboard")
+    st.markdown("Analisis aktivitas akumulasi dan distribusi broker.")
+
+    # ── Mock Data Generator ──
+    @st.cache_data(ttl=3600)
+    def generate_mock_broksum():
+        import random
+        brokers = ["YU", "RX", "ZP", "AK", "DH", "LG", "CP", "CC", "PD", "NI"]
+        stocks  = ["BBCA", "BBRI", "BMRI", "TLKM", "GOTO", "ANTM", "ADRO", "PGAS", "BBNI", "ASII"]
+        dates   = pd.date_range(end=pd.Timestamp.today(), periods=5, freq="B")
+        
+        rows = []
+        for d in dates:
+            for stk in stocks:
+                for brk in brokers:
+                    if random.random() > 0.3:
+                        buy  = random.choice([0, random.randint(100_000_000, 50_000_000_000)])
+                        sell = random.choice([0, random.randint(100_000_000, 50_000_000_000)])
+                        rows.append({
+                            "date":        d,
+                            "stock_code":  stk,
+                            "broker_code": brk,
+                            "buy_value":   buy,
+                            "sell_value":  sell,
+                        })
+        return pd.DataFrame(rows)
+    
+    # Load and process data
+    with st.spinner("Memuat data broker summary..."):
+        df_raw = generate_mock_broksum()
+        df_processed = process_broksum(df_raw)
+        
+    available_brokers = sorted(df_processed["broker_code"].unique())
+    available_dates = sorted(df_processed["date"].dt.date.unique(), reverse=True)
+    
+    col_brk, col_dt, col_top, col_sig = st.columns(4)
+    with col_brk:
+        selected_broker = st.selectbox("Pilih Broker", available_brokers, index=0)
+    with col_dt:
+        selected_date = st.selectbox("Filter Tanggal", ["Semua"] + [str(d) for d in available_dates])
+    with col_top:
+        top_n = st.number_input("Top N Saham", min_value=3, max_value=50, value=10)
+    with col_sig:
+        sig_q = st.slider("Signifikansi (Persentil)", min_value=0.0, max_value=0.9, value=0.5, step=0.1)
+
+    date_filter = None if selected_date == "Semua" else selected_date
+
+    try:
+        activity_res = broker_activity(
+            df_processed, 
+            broker_code=selected_broker, 
+            top_n=int(top_n), 
+            significance_quantile=float(sig_q),
+            date_filter=date_filter
+        )
+        
+        meta = activity_res["meta"]
+        st.caption(f"Menampilkan data untuk broker **{meta['broker_code']}** pada tanggal **{meta['date_filter']}** (Total saham setelah filter signifikansi: {meta['n_stocks_after_filter']})")
+        
+        def format_rp(val):
+            return f"Rp {val:,.0f}"
+
+        col_buy, col_sell = st.columns(2)
+        
+        with col_buy:
+            st.markdown("""
+            <div style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                <span style="color:#22c55e;font-weight:700;font-size:13px;">🟢 TOP BUY (Akumulasi)</span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            top_buy_df = activity_res["top_buy"].copy()
+            if not top_buy_df.empty:
+                st.dataframe(
+                    top_buy_df, 
+                    use_container_width=True, 
+                    hide_index=True,
+                    column_config={
+                        "rank": st.column_config.NumberColumn("#", width="small"),
+                        "stock_code": st.column_config.TextColumn("Saham", width="small"),
+                        "net_value": st.column_config.NumberColumn("Net Buy", format="Rp %,.0f"),
+                        "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
+                        "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
+                        "total_value": None,
+                        "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
+                        "n_dates": None,
+                    }
+                )
+            else:
+                st.info("Tidak ada data akumulasi signifikan.")
+                
+        with col_sell:
+            st.markdown("""
+            <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
+                <span style="color:#ef4444;font-weight:700;font-size:13px;">🔴 TOP SELL (Distribusi)</span>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            top_sell_df = activity_res["top_sell"].copy()
+            if not top_sell_df.empty:
+                st.dataframe(
+                    top_sell_df, 
+                    use_container_width=True, 
+                    hide_index=True,
+                    column_config={
+                        "rank": st.column_config.NumberColumn("#", width="small"),
+                        "stock_code": st.column_config.TextColumn("Saham", width="small"),
+                        "net_value": st.column_config.NumberColumn("Net Sell", format="Rp %,.0f"),
+                        "buy_value": st.column_config.NumberColumn("Buy", format="Rp %,.0f"),
+                        "sell_value": st.column_config.NumberColumn("Sell", format="Rp %,.0f"),
+                        "total_value": None,
+                        "net_ratio": st.column_config.NumberColumn("Net %", format="%.2f%%"),
+                        "n_dates": None,
+                    }
+                )
+            else:
+                st.info("Tidak ada data distribusi signifikan.")
+
+    except Exception as e:
+        st.error(f"Gagal menampilkan aktivitas broker: {str(e)}")
