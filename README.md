@@ -67,30 +67,54 @@ Interactive dashboard built with Streamlit:
 ## 📂 Project Structure
 
 ```bash
-market_lens/
+MarketLens/
 │
-├── app/                        # 🎨 Streamlit UI
-│   ├── streamlit_app.py
+├── app/                         # 🔥 UI (Streamlit only)
+│   ├── streamlit_app.py        # entry point 
+│   │
 │   ├── pages/
+│   │   └── portfolio_page.py
+│   │
 │   ├── ui/
+│   │   ├── dashboard.py        # Main layout 
 │   │   └── components/
+│   │       ├── table.py
+│   │       ├── filters.py
+│   │       └── metrics.py
+│   │
 │   └── services/
+│       ├── data_loader.py      # load & cache data
+│       └── signal_service.py   # engine call
 │
-├── core/                       # 🧠 Core Logic Engine
-│   ├── data/                  # Data fetching
-│   ├── signal/                # Indicators & scoring
+├── core/                        # 🧠 LOGIC ENGINE (NO UI)
+│   │
+│   ├── data/
+│   │   ├── fetcher.py          # yfinance + alpha vantage
+│   │   └── ticker.py           # get_all_idx_tickers
+│   │
+│   ├── signal/
 │   │   ├── indicators/
-│   │   ├── scoring.py
-│   │   └── engine.py
+│   │   │   ├── trend.py        # SMA, DMI, ADX
+│   │   │   ├── momentum.py     # RSI, MACD, KST
+│   │   │   ├── volume.py       # bandarmology
+│   │   │   └── volatility.py   # ATR, SL/TP
+│   │   │
+│   │   ├── scoring.py          # bull/bear score
+│   │   └── engine.py           # calculate_signals (orchestrator)
+│   │
 │   └── utils/
+│       └── helpers.py          # add_jk, dll
 │
-├── processors/                # 📊 Data processing
-├── scanner/                   # 🔄 CLI scanner
+├── processors/                 # 📊 DATA PROCESSING 
+│   └── broksum_processor.py
 │
-├── config.py
+├── scanner/                   # 🔄 CLI / batch scan
+│   └── runner.py
+│
+├── config.py                 
 ├── requirements.txt
+├── packages.txt
 └── README.md
-```
 
 
 ## 🧠 How It Works
