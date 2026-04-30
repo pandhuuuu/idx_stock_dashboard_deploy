@@ -9,15 +9,12 @@ from supabase import create_client
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import yfinance as yf
-from portfolio_page import render_portfolio_page
-from broksum_processor import process_broksum, broker_activity, stock_activity, market_overview
-from idx_stock_monitor import (
-    fetch_data,
-    calculate_signals,
-    add_jk,
-    DEFAULT_TICKERS,
-    get_all_idx_tickers
-)
+from app.pages.portfolio_page import render_portfolio_page
+from processors.broksum_processor import process_broksum, broker_activity, stock_activity, market_overview
+from core.data.fetcher import fetch_data
+from core.signal.engine import calculate_signals
+from core.utils.helpers import add_jk
+from core.data.ticker import DEFAULT_TICKERS, get_all_idx_tickers
 
 st.set_page_config(page_title="MarketLens", layout="wide", page_icon="🧿")
 
