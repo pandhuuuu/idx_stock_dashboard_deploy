@@ -15,8 +15,7 @@ from core.data.fetcher import fetch_data
 from core.signal.engine import calculate_signals
 from core.utils.helpers import add_jk
 from core.data.ticker import DEFAULT_TICKERS, get_all_idx_tickers
-
-st.set_page_config(page_title="MarketLens", layout="wide", page_icon="🧿")
+from app.services.data_loader import cached_fetch, fetch_ticker_tape
 
 # ─────────────────────────────
 # CUSTOM CSS — PROFESSIONAL TRADING TERMINAL
@@ -463,13 +462,6 @@ if "watchlist" not in st.session_state:
 if "scan_results" not in st.session_state:
     st.session_state.scan_results = None
 
-
-# ─────────────────────────────
-# CACHED FETCH (60 detik)
-# ─────────────────────────────
-@st.cache_data(ttl=60)
-def cached_fetch(ticker_jk, period, interval):
-    return fetch_data(ticker_jk, period=period, interval=interval)
 
 
 # ─────────────────────────────
