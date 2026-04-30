@@ -2027,18 +2027,18 @@ with tab3:
                 <div style="display:flex;gap:10px;margin-bottom:14px;">
                     <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;padding:16px;flex:1;">
                         <div style="color:#64748b;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Signal (By Net Value)</div>
-                        <div style="margin-top:6px;display:inline-block;background:{{sig_bg}};color:{{sig_color}};padding:4px 12px;border-radius:6px;font-weight:800;font-size:16px;">{{sig}}</div>
+                        <div style="margin-top:6px;display:inline-block;background:{sig_bg};color:{sig_color};padding:4px 12px;border-radius:6px;font-weight:800;font-size:16px;">{sig}</div>
                     </div>
                     <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;padding:16px;flex:1;">
                         <div style="color:#64748b;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Total Net Value</div>
-                        <div style="margin-top:6px;color:{'#22c55e' if summ['total_net'] > 0 else '#ef4444'};font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;">Rp {{summ['total_net']:,.0f}}</div>
+                        <div style="margin-top:6px;color:{'#22c55e' if summ['total_net'] > 0 else '#ef4444'};font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;">Rp {summ['total_net']:,.0f}</div>
                     </div>
                     <div style="background:#0d1117;border:1px solid #1e2a3a;border-radius:10px;padding:16px;flex:1;">
                         <div style="color:#64748b;font-size:11px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;">Total Buy / Sell</div>
-                        <div style="margin-top:6px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">Buy: Rp {{summ['total_buy']:,.0f}}<br>Sell: Rp {{summ['total_sell']:,.0f}}</div>
+                        <div style="margin-top:6px;color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;">Buy: Rp {summ['total_buy']:,.0f}<br>Sell: Rp {summ['total_sell']:,.0f}</div>
                     </div>
                 </div>
-                """.format(sig=sig, sig_bg=sig_bg, sig_color=sig_color, summ=summ), unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
                 
                 col_b, col_s = st.columns(2)
                 
