@@ -76,7 +76,7 @@ def predict_future(df, days=30):
 # ─────────────────────────────
 # UPGRADE 1 — TICKER TAPE FETCHER
 # ─────────────────────────────
-@st.cache_data(ttl=120)
+@st.cache_data(ttl=300)
 def fetch_ticker_tape():
     """Fetch IHSG + top IDX stocks for ticker tape. Returns list of dicts."""
     items = []
@@ -380,7 +380,7 @@ if mode == "Auto IDX Full":
 else:
     tickers_source = DEFAULT_TICKERS
 
-tickers_input    = st.sidebar.text_area("Kode Saham (100 Ticker Default)", ",".join(tickers_source[:100]), key="ticker_scan_v3")
+tickers_input    = st.sidebar.text_area("Kode Saham (100 Ticker Default)", ",".join(tickers_source[:30]), key="ticker_scan_v3")
 period           = st.sidebar.selectbox("Period",   ["3mo", "6mo", "9mo", "1y", "2y", "3y", "5y", "10y"], index=3)
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk", "1mo"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang")
