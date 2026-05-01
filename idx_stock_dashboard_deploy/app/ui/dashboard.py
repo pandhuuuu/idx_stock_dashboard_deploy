@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import time
 from datetime import datetime
 from datetime import time
 from zoneinfo import ZoneInfo
@@ -768,7 +769,12 @@ with tab1:
         scan_status = st.empty()
 
         for i, ticker in enumerate(tickers):
-            scan_status.text(f"Scanning {ticker}...")
+            scan_status.text(f"Scanning {ticker}... ({i+1}/{len(tickers)})")
+            
+            # Optimalisasi: Jeda singkat agar tidak terkena Rate Limit Yahoo
+            if i > 0:
+                time.sleep(0.2) 
+                
             df = cached_fetch(add_jk(ticker), period, interval)
 
             if df is not None:
@@ -954,7 +960,7 @@ with tab1:
                     display_pump = df_pump_alert[["Saham", "Sektor", "Harga", "RSI", "Signal", "Confidence", "Take Profit"]].copy()
                     display_pump["Signal"] = display_pump["Signal"].apply(format_signal)
                     st.dataframe(display_pump.sort_values("Confidence", ascending=False),
-                                 use_container_width=True, hide_index=True)
+                                 width="stretch", hide_index=True)
                 else:
                     st.caption("Tidak ada sinyal pump saat ini")
 
@@ -969,7 +975,7 @@ with tab1:
                     display_dump = df_dump_alert[["Saham", "Sektor", "Harga", "RSI", "Signal", "Confidence", "Cut Loss"]].copy()
                     display_dump["Signal"] = display_dump["Signal"].apply(format_signal)
                     st.dataframe(display_dump.sort_values("Confidence", ascending=False),
-                                 use_container_width=True, hide_index=True)
+                                 width="stretch", hide_index=True)
                 else:
                     st.caption("Tidak ada sinyal dump saat ini")
 
@@ -988,7 +994,7 @@ with tab1:
                 display_other = df_other[["Saham", "Aktivitas", "Sektor", "Harga", "RSI", "Signal", "Vol Spike ⚡", "Battle ⚔️", "Confidence"]].copy()
                 display_other["Signal"] = display_other["Signal"].apply(format_signal)
                 st.dataframe(display_other.sort_values("Confidence", ascending=False),
-                             use_container_width=True, hide_index=True)
+                             width="stretch", hide_index=True)
 
             # Full Bandar Alert table
             st.markdown("""
@@ -1005,7 +1011,7 @@ with tab1:
             display_full["Signal"] = display_full["Signal"].apply(format_signal)
             st.dataframe(
                 display_full.sort_values("Confidence", ascending=False),
-                use_container_width=True, hide_index=True
+                width="stretch", hide_index=True
             )
 
         else:
@@ -1073,7 +1079,7 @@ with tab1:
             render_sector_heatmap(df_result, sector_map)
         except Exception:
             pass
-        st.dataframe(sector_df, use_container_width=True, hide_index=True)
+        st.dataframe(sector_df, width="stretch", hide_index=True)
 
 
         # ── Market Scanner ───────────────────────────────────────────────
@@ -1086,7 +1092,7 @@ with tab1:
         df_display = df_result.copy()
         df_display["Signal"] = df_display["Signal"].apply(format_signal)
         st.dataframe(df_display.sort_values(by="Confidence", ascending=False),
-                     use_container_width=True, hide_index=True)
+                     width="stretch", hide_index=True)
 
         # ── Top Signals ──────────────────────────────────────────────────
         st.markdown("""
@@ -1108,7 +1114,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
             top_buy["Signal"] = top_buy["Signal"].apply(format_signal)
-            st.dataframe(top_buy, use_container_width=True, hide_index=True)
+            st.dataframe(top_buy, width="stretch", hide_index=True)
         with col2:
             st.markdown("""
             <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:12px 16px;margin-bottom:8px;">
@@ -1116,7 +1122,7 @@ with tab1:
             </div>
             """, unsafe_allow_html=True)
             top_sell["Signal"] = top_sell["Signal"].apply(format_signal)
-            st.dataframe(top_sell, use_container_width=True, hide_index=True)
+            st.dataframe(top_sell, width="stretch", hide_index=True)
 
         # ── Trading Plan ─────────────────────────────────────────────────
         st.markdown("""
@@ -1130,7 +1136,7 @@ with tab1:
             "Cut Loss", "RR Ratio", "Action", "Confidence"
         ]].sort_values(by="Confidence", ascending=False).copy()
         plan_df["Action"] = plan_df["Action"].apply(format_signal)
-        st.dataframe(plan_df, use_container_width=True, hide_index=True)
+        st.dataframe(plan_df, width="stretch", hide_index=True)
 
         # ── Sector Tables ─────────────────────────────────────────────────
         st.markdown("""
@@ -1144,7 +1150,7 @@ with tab1:
             if not sdf.empty:
                 st.markdown(f"<div style='font-size:13px;font-weight:700;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin:12px 0 6px 0;'>▸ {sector}</div>", unsafe_allow_html=True)
                 sdf["Signal"] = sdf["Signal"].apply(format_signal)
-                st.dataframe(sdf, use_container_width=True, hide_index=True)
+                st.dataframe(sdf, width="stretch", hide_index=True)
 
         # ── UPGRADE 4: CONFIDENCE METER ──────────────────────────────────────────
         st.markdown("""
@@ -1239,7 +1245,7 @@ with tab1:
 
         if df_chart is not None:
             fig = plot_candlestick_with_signal(df_chart, selected, row["Signal"])
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, width="stretch")
 
         # ─────────────────────────────
         # 🔮 FUTURE PREDICTION CHART
@@ -1315,7 +1321,7 @@ with tab1:
                 margin=dict(l=40, r=40, t=60, b=40)
             )
 
-            st.plotly_chart(fig_pred, use_container_width=True)
+            st.plotly_chart(fig_pred, width="stretch")
 
             st.markdown("""
             <div style="font-size:13px;font-weight:700;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;margin:16px 0 8px 0;">📊 Prediction Analysis</div>
@@ -1416,7 +1422,7 @@ with tab3:
 
             st.dataframe(
                 overview_df.style.map(color_status, subset=["status"]),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
                 column_config={
                     "rank": st.column_config.NumberColumn("#", width="small"),
@@ -1474,7 +1480,7 @@ with tab3:
                 if not top_buy_df.empty:
                     st.dataframe(
                         top_buy_df, 
-                        use_container_width=True, 
+                        width="stretch", 
                         hide_index=True,
                         column_config={
                             "rank": st.column_config.NumberColumn("#", width="small"),
@@ -1501,7 +1507,7 @@ with tab3:
                 if not top_sell_df.empty:
                     st.dataframe(
                         top_sell_df, 
-                        use_container_width=True, 
+                        width="stretch", 
                         hide_index=True,
                         column_config={
                             "rank": st.column_config.NumberColumn("#", width="small"),
@@ -1583,7 +1589,7 @@ with tab3:
                     if not stock_res["top_buy"].empty:
                         st.dataframe(
                             stock_res["top_buy"], 
-                            use_container_width=True, hide_index=True,
+                            width="stretch", hide_index=True,
                             column_config={
                                 "rank": st.column_config.NumberColumn("#", width="small"),
                                 "broker_code": st.column_config.TextColumn("Broker", width="small"),
@@ -1606,7 +1612,7 @@ with tab3:
                     if not stock_res["top_sell"].empty:
                         st.dataframe(
                             stock_res["top_sell"], 
-                            use_container_width=True, hide_index=True,
+                            width="stretch", hide_index=True,
                             column_config={
                                 "rank": st.column_config.NumberColumn("#", width="small"),
                                 "broker_code": st.column_config.TextColumn("Broker", width="small"),
