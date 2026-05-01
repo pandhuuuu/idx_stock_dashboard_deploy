@@ -769,48 +769,37 @@ with tab1:
         scan_status = st.empty()
 
         for i, ticker in enumerate(tickers):
-            scan_status.text(f"Scanning {ticker}... ({i+1}/{len(tickers)})")
-            
-            # Optimalisasi: Jeda singkat agar tidak terkena Rate Limit Yahoo
-            if i > 0:
-                time_mod.sleep(0.2) 
+            try:
+                scan_status.text(f"Scanning {ticker}... ({i+1}/{len(tickers)})")
                 
-            df = cached_fetch(add_jk(ticker), period, interval)
+                if i > 0:
+                    time_mod.sleep(0.2) 
+                    
+                df = cached_fetch(add_jk(ticker), period, interval)
 
-            if df is not None:
-                sig = calculate_signals(df)
+                if df is not None and not df.empty:
+                    sig = calculate_signals(df)
 
-                if sig is None:
-                    continue
-                if not isinstance(sig, dict):
-                    continue
-                required_keys = ["bull_score", "bear_score", "price", "rsi"]
-                if not all(k in sig for k in required_keys):
-                    continue
-
-                if sig["bull_score"] > sig["bear_score"] + 1:
-                    signal = "BUY"
-                elif sig["bear_score"] > sig["bull_score"] + 1:
-                    signal = "SELL"
-                else:
-                    signal = "NEUTRAL"
-
-                results.append({
-                    "Saham":        ticker,
-                    "Sektor":       get_sector(ticker),
-                    "Harga":        sig["price"],
-                    "RSI":          round(sig["rsi"], 2),
-                    "Signal":       signal,
-                    "Confidence":   sig["confidence"],
-                    "Entry":        sig["price"],
-                    "Take Profit":  round(sig["suggested_tp"], 2),
-                    "Cut Loss":     round(sig["suggested_sl"], 2),
-                    "RR Ratio":     round(sig["risk_reward"], 2),
-                    "bandar_masuk": sig.get("bandar_masuk", False),
-                    "bandar_keluar":sig.get("bandar_keluar", False),
-                    "volume_spike": sig.get("volume_spike", False),
-                    "battle_zone":  sig.get("battle_zone", False),
-                })
+                    if sig is not None and isinstance(sig, dict):
+                        results.append({
+                            "Saham":        ticker,
+                            "Sektor":       get_sector(ticker),
+                            "Harga":        sig.get("price", 0),
+                            "RSI":          round(sig.get("rsi", 50), 2),
+                            "Signal":       sig.get("signal", "NEUTRAL"),
+                            "Confidence":   sig.get("confidence", 0),
+                            "Entry":        sig.get("price", 0),
+                            "Take Profit":  round(sig.get("suggested_tp", 0), 2),
+                            "Cut Loss":     round(sig.get("suggested_sl", 0), 2),
+                            "RR Ratio":     round(sig.get("risk_reward", 0), 2),
+                            "bandar_masuk": sig.get("bandar_masuk", False),
+                            "bandar_keluar":sig.get("bandar_keluar", False),
+                            "volume_spike": sig.get("volume_spike", False),
+                            "battle_zone":  sig.get("battle_zone", False),
+                        })
+            except Exception as e:
+                st.warning(f"Gagal memproses {ticker}: {str(e)}")
+                continue
 
             progress.progress((i + 1) / len(tickers))
 
@@ -824,12 +813,11 @@ with tab1:
         df_result = st.session_state.scan_results.copy()
 
         if df_result.empty:
-            st.error("❌ Tidak ada data")
-            st.stop()
-
-        df_result["Action"] = df_result["Signal"].apply(
-            lambda x: "HOLD" if x == "NEUTRAL" else x
-        )
+            st.warning("⚠️ Tidak ada data saham yang berhasil di-scan. Pastikan kode saham benar atau coba lagi nanti.")
+        else:
+            df_result["Action"] = df_result["Signal"].apply(
+                lambda x: "HOLD" if x == "NEUTRAL" else x
+            )
 
         # ── UPGRADE 2: SUMMARY CARDS WITH PROGRESS BAR ──────────────────────────
         st.markdown("""
