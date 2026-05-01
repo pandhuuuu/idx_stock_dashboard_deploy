@@ -721,7 +721,7 @@ if __name__ == "__main__":
     random.seed(42)
     np.random.seed(42)
 
-    brokers    = ["YU", "RX", "ZP", "AK", "DH", "LG", "CP"]
+    brokers    = ["YU", "RX", "ZP", "AK", "DH", "LG", "CP", "BK", "XL", "XC", "YP"]
     stocks     = ["BBCA","BBRI","BMRI","BRIS","BBNI","BBTN","BJBR","BJTM","BDMN","MEGA",
                 "TLKM","EXCL","ISAT","MTEL","TOWR","TBIG",
                 "ASII","UNVR","ICBP","INDF","MYOR","KLBF","CPIN","JPFA","ULTJ","SIDO","HMSP","GGRM",
