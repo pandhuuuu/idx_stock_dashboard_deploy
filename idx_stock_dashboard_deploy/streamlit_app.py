@@ -1,4 +1,9 @@
 import streamlit as st
+import os
+import sys
+
+# Menambahkan path folder saat ini agar import sub-folder (seperti 'app') terdeteksi
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 st.set_page_config(page_title="MarketLens", layout="wide", page_icon="🧿")
 
