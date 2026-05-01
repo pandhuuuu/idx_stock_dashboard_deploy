@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import time
 from datetime import datetime
-from datetime import time
+from datetime import time as dt_time
 from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
 from supabase import create_client
@@ -461,10 +461,10 @@ with tab1:
     now_wib = datetime.now(ZoneInfo("Asia/Jakarta"))
     current_time = now_wib.time()
 
-    open_1  = time(9, 0)
-    break_1 = time(12, 0)
-    open_2  = time(13, 30)
-    close   = time(16, 0)
+    open_1  = dt_time(9, 0)
+    break_1 = dt_time(12, 0)
+    open_2  = dt_time(13, 30)
+    close   = dt_time(16, 0)
 
     if current_time < open_1:
         status = "⏳ PRE-MARKET"
