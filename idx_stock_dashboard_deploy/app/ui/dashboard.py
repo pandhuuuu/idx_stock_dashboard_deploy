@@ -75,7 +75,7 @@ def predict_future(df, days=30):
 # ─────────────────────────────
 # UPGRADE 1 — TICKER TAPE FETCHER
 # ─────────────────────────────
-@st.cache_data(ttl=120)
+@st.cache_data(ttl=300)
 def fetch_ticker_tape():
     """Fetch IHSG + top IDX stocks for ticker tape. Returns list of dicts."""
     items = []
