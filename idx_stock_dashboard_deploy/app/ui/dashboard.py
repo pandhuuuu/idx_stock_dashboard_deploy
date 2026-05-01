@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import time
+import time as time_mod
 from datetime import datetime
 from datetime import time as dt_time
 from zoneinfo import ZoneInfo
@@ -773,7 +773,7 @@ with tab1:
             
             # Optimalisasi: Jeda singkat agar tidak terkena Rate Limit Yahoo
             if i > 0:
-                time.sleep(0.2) 
+                time_mod.sleep(0.2) 
                 
             df = cached_fetch(add_jk(ticker), period, interval)
 
