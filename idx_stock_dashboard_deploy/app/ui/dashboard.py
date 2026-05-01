@@ -1540,7 +1540,7 @@ with tab3:
         st.markdown("### 📈 Stock Analysis")
         col_stk, col_dt_stk, col_top_stk = st.columns([2, 1, 1])
         with col_stk:
-            selected_stock = st.text_input("Kode Saham", value=available_stocks[100] if available_stocks else "")
+            selected_stock = st.selectbox("Pilih Saham", options=available_stocks, index=0 if available_stocks else None)
         with col_dt_stk:
             selected_date_stk = st.selectbox("Filter Tanggal", ["Semua"] + [str(d) for d in available_dates], key="date_by_stock")
         with col_top_stk:
