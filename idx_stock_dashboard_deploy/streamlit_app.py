@@ -19,7 +19,7 @@ from idx_stock_monitor import (
     get_all_idx_tickers
 )
 
-st.set_page_config(page_title="IDX Stock Dashboard", layout="wide", page_icon="📊")
+st.set_page_config(page_title="MarketLens", layout="wide", page_icon="🧿")
 
 # ─────────────────────────────
 # CUSTOM CSS — PROFESSIONAL TRADING TERMINAL
