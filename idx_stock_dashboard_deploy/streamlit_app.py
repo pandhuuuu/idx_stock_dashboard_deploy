@@ -847,7 +847,7 @@ if mode == "Auto IDX Full":
 else:
     tickers_source = DEFAULT_TICKERS
 
-tickers_input    = st.sidebar.text_area("Kode Saham (pisah koma)", ",".join(tickers_source[:30]))
+tickers_input    = st.sidebar.text_area("Kode Saham (100 Ticker Default)", ",".join(tickers_source[:100]), key="ticker_scan_v3")
 period           = st.sidebar.selectbox("Period",   ["3mo", "6mo", "9mo", "1y", "2y", "3y", "5y", "10y"], index=3)
 interval         = st.sidebar.selectbox("Interval", ["1d", "1wk", "1mo"], index=0)
 run_button       = st.sidebar.button("🚀 Scan Sekarang")
@@ -1236,7 +1236,13 @@ with tab1:
         scan_status = st.empty()
 
         for i, ticker in enumerate(tickers):
-            scan_status.text(f"Scanning {ticker}...")
+            scan_status.text(f"Scanning {ticker}... ({i+1}/{len(tickers)})")
+            
+            # Optimalisasi: Jeda singkat agar tidak terkena Rate Limit Yahoo
+            if i > 0:
+                import time
+                time.sleep(0.2)
+                
             df = cached_fetch(add_jk(ticker), period, interval)
 
             if df is not None:
@@ -1837,7 +1843,7 @@ with tab3:
     def generate_mock_broksum():
         import random
         brokers = ["YU", "RX", "ZP", "AK", "DH", "LG", "CP", "CC", "PD", "NI"]
-        stocks  = ["BBCA", "BBRI", "BMRI", "TLKM", "GOTO", "ANTM", "ADRO", "PGAS", "BBNI", "ASII"]
+        stocks  = DEFAULT_TICKERS
         dates   = pd.date_range(end=pd.Timestamp.today(), periods=10, freq="B")
         
         rows = []
