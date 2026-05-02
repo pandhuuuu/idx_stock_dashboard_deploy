@@ -470,7 +470,7 @@ if "scan_results" not in st.session_state:
 # ─────────────────────────────
 # CACHED FETCH (60 detik)
 # ─────────────────────────────
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300)
 def cached_fetch(ticker_jk, period, interval):
     return fetch_data(ticker_jk, period=period, interval=interval)
 
